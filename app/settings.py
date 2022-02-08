@@ -3,7 +3,7 @@ from datetime import timedelta
 from pydantic import BaseModel, BaseSettings
 
 
-# class _SettingsSecret(BaseModel):
+# class _Secret(BaseModel):
 #     key_token: str  # SECRET_KEY
 
 
@@ -11,7 +11,7 @@ from pydantic import BaseModel, BaseSettings
 #     url: str
 
 
-class _SettingsToken(BaseModel):
+class _Token(BaseModel):
     type: str = 'bearer'  # ACCESS_TOKEN_ALGORITHM
     algorithm: str = 'HS256'  # ACCESS_TOKEN_EXPIRES
     expires: timedelta = timedelta(minutes=30)  # ACCESS_TOKEN_TYPE
@@ -19,8 +19,8 @@ class _SettingsToken(BaseModel):
 
 class Settings(BaseSettings):
     # db: _SettingsDB
-    # secret: _SettingsSecret
-    token: _SettingsToken = _SettingsToken()
+    # secret: _Secret
+    token: _Token = _Token()
 
     class Config:
         env_file = '.env'
