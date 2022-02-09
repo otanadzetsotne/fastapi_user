@@ -1,1 +1,2 @@
-from . import user
+from .user import CRUDUser
+from .base import CRUD

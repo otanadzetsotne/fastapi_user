@@ -3,7 +3,8 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from .. import schemas
-from .. import crud
+from ..crud import CRUDUser
+from ..database.base import db
 from ..utils.security import PasswordContext
 from ..dependencies.settings import get_settings, Settings
 
@@ -46,7 +47,7 @@ async def user_token_valid(
         )
 
     # Get user entity
-    user = await crud.user.get_by_username(token_data.username)
+    user = await CRUDUser.get_by_username(db, token_data.username)
 
     if not user:
         raise HTTPException(
@@ -81,7 +82,7 @@ async def user_authenticate(
     Check if user credentials are correct
     """
 
-    user = await crud.user.get_by_username(form_data.username)
+    user = await CRUDUser.get_by_username(db, form_data.username)
 
     if not user:
         raise HTTPException(
@@ -105,7 +106,7 @@ async def user_not_exist(
     Check if user with gotten email not exists
     """
 
-    user_db = await crud.user.get_by_username(user.username)
+    user_db = await CRUDUser.get_by_username(db, user.username)
 
     if user_db:
         raise HTTPException(
@@ -113,7 +114,7 @@ async def user_not_exist(
             detail='Username already registered',
         )
 
-    user_db = await crud.user.get_by_email(user.email)
+    user_db = await CRUDUser.get_by_email(db, user.email)
 
     if user_db:
         raise HTTPException(

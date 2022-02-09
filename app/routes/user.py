@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
-from .. import crud
+from ..database.base import db
+from ..crud import CRUDUser
 from ..utils.security import JWT, PasswordContext
 from ..utils.randomizer import Randomizer
 from ..dependencies.user import user_not_exist
@@ -22,7 +23,7 @@ async def register(
     # Create user object for DB
     user_db = UserData(**user.dict(), password_hash=password_hash)
     # Insert user to DB
-    user_db = await crud.user.create(user_db)
+    user_db = await CRUDUser.create(db, user_db)
 
     # TODO: confirmation code send
 
