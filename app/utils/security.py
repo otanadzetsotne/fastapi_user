@@ -6,17 +6,18 @@ from passlib.context import CryptContext
 
 
 class PasswordContext:
-    def __init__(self):
-        self.context = CryptContext(
-            schemes=['bcrypt'],
-            deprecated='auto',
-        )
+    context = CryptContext(
+        schemes=['bcrypt'],
+        deprecated='auto',
+    )
 
-    def hash(self, password):
-        return self.context.hash(password)
+    @classmethod
+    def hash(cls, password):
+        return cls.context.hash(password)
 
-    def verify(self, password, password_hash):
-        return self.context.verify(password, password_hash)
+    @classmethod
+    def verify(cls, password, password_hash):
+        return cls.context.verify(password, password_hash)
 
 
 class JWT:

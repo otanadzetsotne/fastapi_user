@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from .. import crud
-from ..utils.security import JWT
-from ..utils.randomizer import registration_confirmation_code
-from ..dependencies.user import user_not_exist, get_password_context
+from ..utils.security import JWT, PasswordContext
+from ..utils.randomizer import Randomizer
+from ..dependencies.user import user_not_exist
+from ..dependencies.user import user_authenticate
+from ..dependencies.user import user_active
 from ..dependencies.settings import get_settings
-from ..schemas import UserBase, UserData
+from ..schemas import User, UserBase, UserData, TokenOut
 
 
 router = APIRouter(prefix='/user')
@@ -14,10 +16,9 @@ router = APIRouter(prefix='/user')
 @router.post(path='/register', response_model=UserBase)
 async def register(
         user=Depends(user_not_exist),
-        password_context=Depends(get_password_context)
 ):
     # Hash password
-    password_hash = password_context.hash(user.password)
+    password_hash = PasswordContext.hash(user.password)
     # Create user object for DB
     user_db = UserData(**user.dict(), password_hash=password_hash)
     # Insert user to DB
@@ -28,31 +29,30 @@ async def register(
     return user_db
 
 
+@router.post('/login')
+async def login_for_access_token(
+        user=Depends(user_authenticate),
+        settings=Depends(get_settings),
+):
+    # Create token for user
+    access_token = JWT.create(
+        {'sub': user.username},
+        settings.token.algorithm,
+        settings.token.expires,
+        settings.secret.jwt_key,
+    )
+
+    return TokenOut(
+        access_token=access_token,
+        token_type=settings.token.type,
+    )
+
+
 @router.get('/confirm')
 async def confirm():
     pass
 
 
-# @router.post('/login')
-# async def login_for_access_token(
-#         user: User = Depends(user_authenticate),
-#         settings: Settings = Depends(get_settings),
-# ):
-#     Create token for user
-    # access_token = JWT.create(
-    #     {'sub': user.username},
-    #     settings.token.algorithm,
-    #     settings.token.expires,
-    #     settings.secret.key_token,
-    # )
-    #
-    # return {
-    #     'access_token': access_token,
-    #     'token_type': settings.token.type,
-    # }
-
-
-
-# @router.post('/test')
-# def test():
-#     pass
+@router.post('/test')
+def test(user: User = Depends(user_active)):
+    return {'message': 'correct'}
