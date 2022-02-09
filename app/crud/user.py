@@ -3,7 +3,7 @@ from databases import Database
 
 from ..database.models import users
 from ..schemas import UserData, User
-from . import CRUD
+from .base import CRUD
 
 
 class CRUDUser(CRUD):
