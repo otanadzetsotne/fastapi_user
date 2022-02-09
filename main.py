@@ -4,9 +4,6 @@ from app.routes import user_router
 from app.database.base import db
 
 
-# await db.Base.metadata.create_all(bind=db.engine)
-
-
 app = FastAPI()
 app.include_router(user_router)
 

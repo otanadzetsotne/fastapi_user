@@ -6,6 +6,7 @@ users = Table(
     'users',
     metadata,
     Column('id', Integer, primary_key=True, index=True),
+    Column('username', String(60), nullable=False, unique=True, index=True),
     Column('email', String(320), nullable=False, unique=True, index=True),
     Column('password_hash', String(60), nullable=False),
     Column('name', String(60), nullable=True),

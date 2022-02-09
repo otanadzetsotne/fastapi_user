@@ -1,13 +1,17 @@
 from typing import Optional
 
 from pydantic import BaseModel
+from pydantic import EmailStr
 
 
 class UserBase(BaseModel):
-    email: str
+    username: str
+    email: EmailStr
     name: Optional[str] = None
     surname: Optional[str] = None
     phone: Optional[str] = None
+
+    # TODO: phone number validation
 
 
 class UserIn(UserBase):

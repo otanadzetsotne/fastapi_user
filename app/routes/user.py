@@ -1,20 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from .. import crud
-from ..utils import security
+from ..utils.security import JWT
 from ..utils.randomizer import registration_confirmation_code
-from ..dependencies.user import user_not_exist
+from ..dependencies.user import user_not_exist, get_password_context
 from ..dependencies.settings import get_settings
 from ..schemas import UserBase, UserData
 
 
 router = APIRouter(prefix='/user')
-password_context = security.PasswordContext()
 
 
 @router.post(path='/register', response_model=UserBase)
 async def register(
         user=Depends(user_not_exist),
+        password_context=Depends(get_password_context)
 ):
     # Hash password
     password_hash = password_context.hash(user.password)
@@ -33,9 +33,24 @@ async def confirm():
     pass
 
 
-# @router.post('/login', response_model=TokenOut)
-# def login():
-#     pass
+# @router.post('/login')
+# async def login_for_access_token(
+#         user: User = Depends(user_authenticate),
+#         settings: Settings = Depends(get_settings),
+# ):
+#     Create token for user
+    # access_token = JWT.create(
+    #     {'sub': user.username},
+    #     settings.token.algorithm,
+    #     settings.token.expires,
+    #     settings.secret.key_token,
+    # )
+    #
+    # return {
+    #     'access_token': access_token,
+    #     'token_type': settings.token.type,
+    # }
+
 
 
 # @router.post('/test')

@@ -3,18 +3,12 @@ from ..database.base import db
 from ..schemas import UserData, User
 
 
-async def get(user_id: int):
-    query = models.users.select().where(models.users.id == user_id)
-    user = await db.fetch_one(query)
+async def create(user: UserData) -> User:
+    query = models.users.insert().values(**user.dict())
+    user_id = await db.execute(query)
+    user_db = User(id=user_id, **user.dict())
 
-    return user
-
-
-async def get_by_email(email: str):
-    query = models.users.select().where(models.users.columns.email == email)
-    user = await db.fetch_one(query)
-
-    return user
+    return user_db
 
 
 async def get_multi(skip: int = 0, limit: int = 100):
@@ -24,9 +18,20 @@ async def get_multi(skip: int = 0, limit: int = 100):
     return users
 
 
-async def create(user: UserData) -> User:
-    query = models.users.insert().values(**user.dict())
-    user_id = await db.execute(query)
-    user_db = User(id=user_id, **user.dict())
+async def get_where(statement):
+    query = models.users.select().where(statement)
+    user = await db.fetch_one(query)
 
-    return user_db
+    return user
+
+
+async def get(user_id: int):
+    return await get_where(models.users.id == user_id)
+
+
+async def get_by_username(username: str):
+    return await get_where(models.users.columns.username == username)
+
+
+async def get_by_email(email: str):
+    return await get_where(models.users.columns.email == email)

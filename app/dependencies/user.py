@@ -7,8 +7,9 @@ from fastapi.security import (
     OAuth2PasswordRequestForm,
 )
 
-from .. import crud
 from .. import schemas
+from .. import crud
+from ..utils.security import PasswordContext
 # from ..schemas import UserCreate, User, TokenOut
 # from app.utils.security import PasswordContext
 # from settings import Settings
@@ -117,21 +118,27 @@ from .. import schemas
 
 # async def user_authenticate(
 #         form_data: OAuth2PasswordRequestForm = Depends(),
-#         pwd_context: PasswordContext = Depends(),
+#         password_context: PasswordContext = Depends(),
 # ) -> User:
 #     """
 #     Check if user credentials are correct
 #     """
 #
 #     user = await get_user(form_data.username)
+#     user = await crud.user.get_by_email(form_data.)
 #
 #     if not user:
 #         raise UsernameOrPasswordError
 #
-#     if not pwd_context.verify(form_data.password, user.password_hash):
+#     if not password_context.verify(form_data.password, user.password_hash):
 #         raise UsernameOrPasswordError
 #
 #     return user
+
+
+@cache
+def get_password_context() -> PasswordContext:
+    return PasswordContext()
 
 
 async def user_not_exist(
@@ -140,6 +147,14 @@ async def user_not_exist(
     """
     Check if user with gotten email not exists
     """
+
+    user_db = await crud.user.get_by_username(user.username)
+
+    if user_db:
+        raise HTTPException(
+            status_code=400,
+            detail='Username already registered',
+        )
 
     user_db = await crud.user.get_by_email(user.email)
 
