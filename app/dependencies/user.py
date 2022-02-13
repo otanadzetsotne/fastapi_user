@@ -2,11 +2,11 @@ from jose import JWTError, jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
+from .settings import get_settings, Settings
 from .. import schemas
 from ..crud import CRUDUser
 from ..database.base import db
-from ..utils.security import PasswordContext
-from ..dependencies.settings import get_settings, Settings
+from ..utils.security import HashContext
 
 
 oauth2_scheme = OAuth2PasswordBearer(
@@ -31,6 +31,8 @@ async def user_token_valid(
         )
         # Store username in token subject
         username: str = payload.get('sub')
+
+        # TODO: token expires check
 
         if username is None:
             raise HTTPException(
@@ -90,7 +92,7 @@ async def user_authenticate(
             detail='Invalid credentials',
         )
 
-    if not PasswordContext.verify(form_data.password, user.password_hash):
+    if not HashContext.password.verify(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=400,
             detail='Invalid credentials',

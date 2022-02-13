@@ -18,7 +18,7 @@ class CRUDUser(CRUD):
             db: Database,
             email: EmailStr,
     ):
-        return await cls.get_where(db, cls.model.columns.email == email)
+        return await cls.get_where(db, cls.model.c.email == email)
 
     @classmethod
     async def get_by_username(
@@ -26,4 +26,4 @@ class CRUDUser(CRUD):
             db: Database,
             username: str,
     ):
-        return await cls.get_where(db, cls.model.columns.username == username)
+        return await cls.get_where(db, cls.model.c.username == username)

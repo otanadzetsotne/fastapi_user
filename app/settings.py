@@ -4,7 +4,8 @@ from pydantic import BaseModel, BaseSettings
 
 
 class Secret(BaseModel):
-    jwt_key: str  # SECRET_KEY
+    jwt_key: str
+    refresh_key: str
 
 
 # class _SettingsDB(BaseModel):
@@ -12,13 +13,21 @@ class Secret(BaseModel):
 
 
 class Token(BaseModel):
-    type: str = 'bearer'  # ACCESS_TOKEN_ALGORITHM
-    algorithm: str = 'HS256'  # ACCESS_TOKEN_EXPIRES
-    expires: timedelta = timedelta(minutes=30)  # ACCESS_TOKEN_TYPE
+    type: str = 'bearer'
+    algorithm: str = 'HS256'
+    access_expires: timedelta = timedelta(minutes=30)
+    refresh_expires: timedelta = timedelta(days=30)
+
+
+class SMTP(BaseModel):
+    msg_from: str
+    host: str
+    port: int
 
 
 class Settings(BaseSettings):
     # db: _SettingsDB
+    smtp: SMTP
     secret: Secret
     token: Token = Token()
 

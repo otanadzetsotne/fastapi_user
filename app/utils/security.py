@@ -5,28 +5,24 @@ from jose import jwt
 from passlib.context import CryptContext
 
 
-class PasswordContext:
-    context = CryptContext(
+class HashContext:
+    password = CryptContext(
         schemes=['bcrypt'],
         deprecated='auto',
     )
 
-    @classmethod
-    def hash(cls, password):
-        return cls.context.hash(password)
-
-    @classmethod
-    def verify(cls, password, password_hash):
-        return cls.context.verify(password, password_hash)
+    token = CryptContext(
+        schemes=['bcrypt'],
+    )
 
 
 class JWT:
     @staticmethod
     def create(
             data: dict,
-            token_algorithm: str,
-            token_expires: timedelta,
-            token_secret_key: str,
+            jwt_algorithm: str,
+            jwt_expires: timedelta,
+            jwt_key: str,
     ):
         """
         Create jwt token string with encoded data
@@ -34,14 +30,26 @@ class JWT:
 
         # Prepare data
         to_encode = data.copy()
-        expire = datetime.utcnow() + token_expires
+        expire = datetime.utcnow() + jwt_expires
         to_encode.update({'exp': expire})
 
         # Create JWT
         encoded_jwt = jwt.encode(
             claims=to_encode,
-            key=token_secret_key,
-            algorithm=token_algorithm,
+            key=jwt_key,
+            algorithm=jwt_algorithm,
         )
 
         return encoded_jwt
+
+
+class JWTRefresh:
+    @staticmethod
+    def create(
+            jwt_token: str,
+            refresh_key: str,
+    ):
+        payload = jwt_token + refresh_key
+        refresh_token = HashContext.token.hash(payload)
+
+        return refresh_token

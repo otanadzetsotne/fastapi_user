@@ -1,3 +1,4 @@
+from abc import ABCMeta
 from typing import Type, TypeVar
 
 from databases import Database
@@ -12,11 +13,34 @@ CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
 UpdateSchemaType = TypeVar('UpdateSchemaType', bound=BaseModel)
 
 
-class CRUD:
+class CRUD(metaclass=ABCMeta):
     model: Type[TableType]
     schema: Type[SchemaType]
     schema_create: Type[CreateSchemaType]
     schema_update: Type[UpdateSchemaType]
+
+    @classmethod
+    async def delete_where(
+            cls,
+            db: Database,
+            *statements,
+    ):
+        query = cls.model.delete().where(*statements)
+        result = await db.execute(query)
+
+        return result
+
+    @classmethod
+    async def update_where(
+            cls,
+            db: Database,
+            *statements,
+            **values,
+    ):
+        query = cls.model.update(*statements).values(**values)
+        result = await db.execute(query)
+
+        return result
 
     @classmethod
     async def get_where(
@@ -59,4 +83,4 @@ class CRUD:
             db: Database,
             entity_id: int,
     ):
-        return await cls.get_where(db, cls.model.columns.id == entity_id)
+        return await cls.get_where(db, cls.model.c.id == entity_id)
