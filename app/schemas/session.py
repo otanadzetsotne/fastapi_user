@@ -1,14 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, IPvAnyAddress
-
-
-class Agent(BaseModel):
-    host: IPvAnyAddress
-    user_agent: str
-
-    def __str__(self):
-        return f'{self.host} {self.user_agent}'
+from pydantic import BaseModel, Field
 
 
 class SessionAgent(BaseModel):
@@ -16,8 +8,11 @@ class SessionAgent(BaseModel):
     agent: str = Field(...)
 
 
-class SessionData(SessionAgent):
+class SessionMeta(SessionAgent):
     token: str = Field(..., max_length=60)
+
+
+class SessionData(SessionMeta):
     expires: datetime = Field(...)
 
 

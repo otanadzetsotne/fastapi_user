@@ -1,106 +1,131 @@
-from jose import JWTError, jwt
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordRequestForm
 
-from .settings import get_settings, Settings
+from .token import jwt_auth_checked, jwt_refresh_checked, jwt_confirm_checked
 from .. import schemas
 from ..crud import CRUDUser
 from ..database.base import db
 from ..utils.security import HashContext
-
-
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl='user/login',
+from ..exceptions import (
+    UserAlreadyExist,
+    InactiveUser,
+    InvalidCredentials,
+    UnconfirmedUser,
 )
 
 
-async def user_token_valid(
-        token: str = Depends(oauth2_scheme),
-        settings: Settings = Depends(get_settings),
-) -> schemas.User:
-    """
-    Get current user from jwt token
-    """
+class UserExists:
+    async def __call__(self, username: str):
+        # Get user
+        user = await CRUDUser.get_by_username(db, username)
 
-    try:
-        # Decode data from token
-        payload = jwt.decode(
-            token=token,
-            key=settings.secret.jwt_key,
-            algorithms=[settings.token.algorithm],
-        )
-        # Store username in token subject
-        username: str = payload.get('sub')
+        # Check if user exists
+        if user is None:
+            raise InvalidCredentials
 
-        # TODO: token expires check
-
-        if username is None:
-            raise HTTPException(
-                status_code=400,
-                detail='Invalid credentials',
-            )
-
-        token_data = schemas.TokenData(username=username)
-
-    except JWTError:
-        raise HTTPException(
-            status_code=400,
-            detail='Invalid credentials',
-        )
-
-    # Get user entity
-    user = await CRUDUser.get_by_username(db, token_data.username)
-
-    if not user:
-        raise HTTPException(
-            status_code=400,
-            detail='Invalid credentials',
-        )
-
-    return user
+        return user
 
 
-async def user_active(
-        user: schemas.User = Depends(user_token_valid),
-) -> schemas.User:
-    """
-    Check if current user is activated
-    :param user: User object
-    """
+class UserActive(UserExists):
+    async def __call__(self, username: str):
+        user = await super(UserActive, self).__call__(username)
 
-    if user.disabled:
-        raise HTTPException(
-            status_code=401,
-            detail='User disabled',
+        if user.disabled:
+            raise InactiveUser
+
+        return user
+
+
+class UserConfirmed(UserActive):
+    async def __call__(self, username: str):
+        user = await super(UserConfirmed, self).__call__(username)
+
+        if not user.confirmed:
+            raise UnconfirmedUser
+
+        return user
+
+
+class UserPassword(UserExists):
+    async def __call__(
+            self,
+            form_data: OAuth2PasswordRequestForm = Depends(),
+    ):
+        user = await super(UserPassword, self).__call__(form_data.username)
+
+        # Check if password is valid
+        is_password_valid = HashContext.password.verify(
+            form_data.password,
+            user.password_hash,
         )
 
-    return user
+        # If password is not valid throw exception
+        if not is_password_valid:
+            raise InvalidCredentials
+
+        return user
 
 
-async def user_authenticate(
-        form_data: OAuth2PasswordRequestForm = Depends(),
-) -> schemas.User:
-    """
-    Check if user credentials are correct
-    """
-
-    user = await CRUDUser.get_by_username(db, form_data.username)
-
-    if not user:
-        raise HTTPException(
-            status_code=400,
-            detail='Invalid credentials',
-        )
-
-    if not HashContext.password.verify(form_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=400,
-            detail='Invalid credentials',
-        )
-
-    return user
+# Using for user credentials validation
+user_valid_password = UserPassword()
 
 
+class UserValid:
+    user_checker: UserExists
+
+    async def __call__(
+            self,
+            token: schemas.AccessTokenChecked,
+    ):
+        username = token.payload.get('sub')
+        token.user = await self.user_checker.__call__(username)
+
+        return token
+
+
+class UserAuth(UserValid):
+    user_checker = UserConfirmed()
+
+    async def __call__(
+            self,
+            access_token=Depends(jwt_auth_checked),
+    ):
+        return await super(UserAuth, self).__call__(access_token)
+
+
+# Using for access token validation
+user_valid_auth = UserAuth()
+
+
+class UserAuthRefresh(UserValid):
+    user_checker = UserConfirmed()
+
+    async def __call__(
+            self,
+            token=Depends(jwt_refresh_checked),
+    ):
+        return await super(UserAuthRefresh, self).__call__(token)
+
+
+# Using for refresh token validation
+user_valid_refresh = UserAuthRefresh()
+
+
+class UserConfirm(UserValid):
+    user_checker = UserActive()
+
+    async def __call__(
+            self,
+            token=Depends(jwt_confirm_checked),
+    ):
+        return await super(UserConfirm, self).__call__(token)
+
+
+# Using for confirmation token validation
+user_valid_confirmation = UserConfirm()
+
+
+# Using for registration validation
 async def user_not_exist(
         user: schemas.UserIn,
 ) -> schemas.UserIn:
@@ -111,17 +136,6 @@ async def user_not_exist(
     user_db = await CRUDUser.get_by_username(db, user.username)
 
     if user_db:
-        raise HTTPException(
-            status_code=400,
-            detail='Username already registered',
-        )
-
-    user_db = await CRUDUser.get_by_email(db, user.email)
-
-    if user_db:
-        raise HTTPException(
-            status_code=400,
-            detail='Email already registered',
-        )
+        raise UserAlreadyExist
 
     return user

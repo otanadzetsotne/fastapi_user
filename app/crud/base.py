@@ -20,10 +20,18 @@ class CRUD(metaclass=ABCMeta):
     schema_update: Type[UpdateSchemaType]
 
     @classmethod
+    async def delete(
+            cls,
+            db: Database,
+            entity_id: int,
+    ):
+        return await cls.delete_where(db, cls.model.c.id == entity_id)
+
+    @classmethod
     async def delete_where(
             cls,
             db: Database,
-            *statements,
+            *statements: list[BinaryExpression],
     ):
         query = cls.model.delete().where(*statements)
         result = await db.execute(query)
@@ -31,10 +39,23 @@ class CRUD(metaclass=ABCMeta):
         return result
 
     @classmethod
+    async def update(
+            cls,
+            db: Database,
+            entity_id: int,
+            **values,
+    ):
+        return await cls.update_where(
+            db,
+            cls.model.c.id == entity_id,
+            **values,
+        )
+
+    @classmethod
     async def update_where(
             cls,
             db: Database,
-            *statements,
+            *statements: list[BinaryExpression],
             **values,
     ):
         query = cls.model.update(*statements).values(**values)
@@ -46,9 +67,9 @@ class CRUD(metaclass=ABCMeta):
     async def get_where(
             cls,
             db: Database,
-            statement: BinaryExpression,
+            *statements: list[BinaryExpression],
     ):
-        query = cls.model.select().where(statement)
+        query = cls.model.select().where(*statements)
         result = await db.fetch_one(query)
 
         return result
@@ -57,10 +78,12 @@ class CRUD(metaclass=ABCMeta):
     async def get_multi(
             cls,
             db: Database,
+            *statements: list[BinaryExpression],
             offset: int = 0,
             limit: int = 100,
     ):
-        query = cls.model.select().offset(offset).limit(limit)
+        query = cls.model.select().where(*statements)
+        query = query.offset(offset).limit(limit)
         entities = await db.fetch_all(query)
 
         return entities

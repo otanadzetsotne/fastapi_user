@@ -1,4 +1,5 @@
-from . import settings
 from . import user
-from . import templates
 from . import smtp
+from . import token
+from . import settings
+from . import templates

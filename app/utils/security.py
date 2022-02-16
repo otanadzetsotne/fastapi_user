@@ -19,17 +19,17 @@ class HashContext:
 class JWT:
     @staticmethod
     def create(
-            data: dict,
+            payload: dict,
             jwt_algorithm: str,
             jwt_expires: timedelta,
             jwt_key: str,
-    ):
+    ) -> str:
         """
         Create jwt token string with encoded data
         """
 
         # Prepare data
-        to_encode = data.copy()
+        to_encode = payload.copy()
         expire = datetime.utcnow() + jwt_expires
         to_encode.update({'exp': expire})
 
@@ -48,7 +48,7 @@ class JWTRefresh:
     def create(
             jwt_token: str,
             refresh_key: str,
-    ):
+    ) -> str:
         payload = jwt_token + refresh_key
         refresh_token = HashContext.token.hash(payload)
 

@@ -6,6 +6,7 @@ from pydantic import BaseModel, BaseSettings
 class Secret(BaseModel):
     jwt_key: str
     refresh_key: str
+    confirm_key: str
 
 
 # class _SettingsDB(BaseModel):

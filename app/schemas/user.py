@@ -31,8 +31,7 @@ _PHONE_RE = re.compile(_PHONE_PATTERN, re.I)
 
 
 class UserBase(BaseModel):
-    username: str = Field(...)
-    email: EmailStr = Field(...)
+    username: EmailStr = Field(...)
     name: Optional[str] = Field(None)
     surname: Optional[str] = Field(None)
     phone: Optional[str] = Field(None)

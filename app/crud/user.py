@@ -13,17 +13,9 @@ class CRUDUser(CRUD):
     schema_update = UserData
 
     @classmethod
-    async def get_by_email(
-            cls,
-            db: Database,
-            email: EmailStr,
-    ):
-        return await cls.get_where(db, cls.model.c.email == email)
-
-    @classmethod
     async def get_by_username(
             cls,
             db: Database,
             username: str,
-    ):
+    ) -> User:
         return await cls.get_where(db, cls.model.c.username == username)
