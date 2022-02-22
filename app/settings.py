@@ -26,8 +26,18 @@ class SMTP(BaseModel):
     port: int
 
 
+class DataBase(BaseModel):
+    name: str
+    host: str
+    port: str
+    user: str
+    password: str
+    subd: str
+    engine: str
+
+
 class Settings(BaseSettings):
-    # db: _SettingsDB
+    db: DataBase
     smtp: SMTP
     secret: Secret
     token: Token = Token()

@@ -1,4 +1,5 @@
 from sqlalchemy import Table, Boolean, Column, Integer, String
+
 from ..base import metadata
 
 

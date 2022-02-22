@@ -15,7 +15,7 @@ from ..exceptions import InvalidCredentials, RefreshTokenExpired
 
 settings: Settings = get_settings()
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl='user/login',
+    tokenUrl='auth/login',
 )
 
 

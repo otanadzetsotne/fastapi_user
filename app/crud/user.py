@@ -1,9 +1,8 @@
-from pydantic import EmailStr
 from databases import Database
 
+from .base import CRUD
 from ..database.models import users
 from ..schemas import UserData, User
-from .base import CRUD
 
 
 class CRUDUser(CRUD):

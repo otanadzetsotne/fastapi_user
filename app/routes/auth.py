@@ -7,23 +7,29 @@ from ..crud import CRUDUser, CRUDSession
 from ..utils.security import HashContext, JWT, JWTRefresh
 from ..utils.randomizer import Randomizer
 from ..utils.session import SessionUtil
-from ..dependencies.smtp import get_smtp
-from ..dependencies.user import user_not_exist
-from ..dependencies.user import user_valid_auth
-from ..dependencies.user import user_valid_refresh
-from ..dependencies.user import user_valid_password
-from ..dependencies.user import user_valid_confirmation
 from ..dependencies.settings import Settings, get_settings
 from ..dependencies.templates import get_templates
-from ..schemas import UserBase, UserData, TokenOut, SessionAgent
+from ..dependencies.user import (
+    user_not_exist,
+    user_valid_auth,
+    user_valid_refresh,
+    user_valid_password,
+    user_valid_confirmation,
+)
+from ..schemas import (
+    UserBase,
+    UserData,
+    TokenOut,
+    SessionAgent,
+)
 
 
-router = APIRouter(prefix='/user')
+router_auth = APIRouter(prefix='/auth')
 templates = get_templates()
 settings: Settings = get_settings()
 
 
-@router.post(path='/register', response_model=UserBase)
+@router_auth.post(path='/register', response_model=UserBase)
 async def register(
         user=Depends(user_not_exist),
 ):
@@ -40,7 +46,7 @@ async def register(
     return user
 
 
-@router.post('/login')
+@router_auth.post('/login')
 async def login(
         request: Request,
         user=Depends(user_valid_password),
@@ -83,16 +89,21 @@ async def login(
     )
 
 
-@router.post('/token')
+@router_auth.post('/token')
 async def token_refresh(token=Depends(user_valid_refresh)):
     return token
 
 
-@router.get('/confirm')
+@router_auth.get('/confirm')
 async def confirm(token=Depends(user_valid_confirmation)):
     return token
 
 
-@router.post('/test')
+@router_auth.post('/test')
 def test(user=Depends(user_valid_auth)):
     return user
+
+
+@router_auth.get('/test_free')
+def test_free():
+    return {'result': True}

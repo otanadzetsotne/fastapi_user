@@ -1,13 +1,23 @@
 import databases
 from sqlalchemy import MetaData
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
+from ..dependencies.settings import get_settings
 
-# DATABASE_URL = f'mysql+pymysql://mysql:@localhost/imsim'
-DATABASE_URL = f'mysql+aiomysql://mysql:@localhost/imsim'
-# SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
-db = databases.Database(DATABASE_URL)
+settings = get_settings()
+
+
+name = settings.db.name
+host = settings.db.host
+port = settings.db.port
+user = settings.db.user
+password = settings.db.password
+subd = settings.db.subd
+engine = settings.db.engine
+database_url = f'{subd}+{engine}://{user}:{password}@{host}:{port}/{name}'
+
+
+db = databases.Database(database_url)
 Base = declarative_base()
 metadata = MetaData()

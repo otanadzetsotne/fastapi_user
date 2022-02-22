@@ -2,7 +2,7 @@ from databases import Database
 
 from .base import CRUD
 from ..database.models import sessions
-from ..schemas.session import SessionData, SessionAgent, Session, SessionMeta
+from ..schemas import SessionData, SessionAgent, Session, SessionMeta
 
 
 class CRUDSession(CRUD):

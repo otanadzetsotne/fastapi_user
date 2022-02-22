@@ -1,18 +1,18 @@
 from fastapi import FastAPI
 
-from app.routes import user_router
-from app.database.base import db
+from .database.base import db
+from .routes.auth import router_auth
 
 
-app = FastAPI()
-app.include_router(user_router)
+app_fastapi = FastAPI()
+app_fastapi.include_router(router_auth)
 
 
-@app.on_event("startup")
+@app_fastapi.on_event('startup')
 async def startup():
     await db.connect()
 
 
-@app.on_event("shutdown")
+@app_fastapi.on_event('shutdown')
 async def shutdown():
     await db.disconnect()
