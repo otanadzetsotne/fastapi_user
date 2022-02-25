@@ -1,13 +1,15 @@
 from abc import ABCMeta
-from typing import Type, TypeVar
+from typing import Type, TypeVar, Optional
 
-from databases import Database
 from pydantic import BaseModel
-from sqlalchemy import Table
 from sqlalchemy.sql.elements import BinaryExpression
+from sqlalchemy import select, delete, update, insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..database.base import Base
 
 
-TableType = TypeVar('TableType', bound=Table)
+TableType = TypeVar('TableType', bound=Base)
 SchemaType = TypeVar('SchemaType', bound=BaseModel)
 CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
 UpdateSchemaType = TypeVar('UpdateSchemaType', bound=BaseModel)
@@ -19,91 +21,162 @@ class CRUD(metaclass=ABCMeta):
     schema_create: Type[CreateSchemaType]
     schema_update: Type[UpdateSchemaType]
 
-    @classmethod
-    async def delete(
-            cls,
-            db: Database,
-            entity_id: int,
-    ):
-        return await cls.delete_where(db, cls.model.c.id == entity_id)
-
-    @classmethod
-    async def delete_where(
-            cls,
-            db: Database,
+    @staticmethod
+    def query_where(
+            query,
             *statements: list[BinaryExpression],
     ):
-        query = cls.model.delete().where(*statements)
+        if statements:
+            query = query.where(*statements)
+
+        return query
+
+    @staticmethod
+    def query_offset_limit(
+            query,
+            offset: int,
+            limit: int,
+    ):
+        if offset:
+            query = query.offset(offset)
+
+        if limit:
+            query = query.limit(limit)
+
+        return query
+
+    @classmethod
+    def query_make(
+            cls,
+            query,
+            *statements: list[BinaryExpression],
+            offset: int,
+            limit: int,
+    ):
+        query = cls.query_where(query, *statements)
+        query = cls.query_offset_limit(query, offset=offset, limit=limit)
+
+        return query
+
+    @classmethod
+    def query_select(
+            cls,
+            *statements: list[BinaryExpression],
+            offset: int,
+            limit: int,
+    ):
+        query = select(cls.model)
+        query = cls.query_make(query, *statements, offset=offset, limit=limit)
+
+        return query
+
+    # Base executes
+
+    @staticmethod
+    async def execute_first(
+            db: AsyncSession,
+            query,
+    ):
+        """
+        Execute query and get first
+        """
+
         result = await db.execute(query)
+        result = result.scalars().first()
 
         return result
 
-    @classmethod
-    async def update(
-            cls,
-            db: Database,
-            entity_id: int,
-            **values,
+    @staticmethod
+    async def execute_all(
+            db: AsyncSession,
+            query,
     ):
-        return await cls.update_where(
-            db,
-            cls.model.c.id == entity_id,
-            **values,
-        )
+        """
+        Execute query and get all
+        """
 
-    @classmethod
-    async def update_where(
-            cls,
-            db: Database,
-            *statements: list[BinaryExpression],
-            **values,
-    ):
-        query = cls.model.update(*statements).values(**values)
         result = await db.execute(query)
+        result = result.scalars().all()
 
         return result
 
-    @classmethod
-    async def get_where(
-            cls,
-            db: Database,
-            *statements: list[BinaryExpression],
-    ):
-        query = cls.model.select().where(*statements)
-        result = await db.fetch_one(query)
-
-        return result
-
-    @classmethod
-    async def get_multi(
-            cls,
-            db: Database,
-            *statements: list[BinaryExpression],
-            offset: int = 0,
-            limit: int = 100,
-    ):
-        query = cls.model.select().where(*statements)
-        query = query.offset(offset).limit(limit)
-        entities = await db.fetch_all(query)
-
-        return entities
+    # Executes
 
     @classmethod
     async def create(
             cls,
-            db: Database,
+            db: AsyncSession,
             entity: CreateSchemaType,
-    ) -> SchemaType:
-        query = cls.model.insert().values(**entity.dict())
-        entity_id = await db.execute(query)
-        entity_db = cls.schema(id=entity_id, **entity.dict())
+    ):
+        """
+        Create and select first
+        """
 
-        return entity_db
+        query = insert(cls.model).values(**dict(entity))
+
+        result = await db.execute(query)
+        entity_id = result.lastrowid
+
+        return cls.schema(
+            id=entity_id,
+            **entity.dict(),
+        )
 
     @classmethod
-    async def get(
+    async def delete_first(
             cls,
-            db: Database,
-            entity_id: int,
+            db: AsyncSession,
+            *statements,
     ):
-        return await cls.get_where(db, cls.model.c.id == entity_id)
+        """
+        Delete first
+        """
+
+        query = delete(cls.model)
+        query = cls.query_where(query, *statements)
+
+        await db.execute(query)
+
+    @classmethod
+    async def update_first(
+            cls,
+            db: AsyncSession,
+            *statements,
+            **values,
+    ):
+        """
+        Update and select first
+        """
+
+        query = update(cls.model)
+        query = cls.query_where(query, *statements)
+        query = query.values(**values)
+        return await cls.execute_first(db, query)
+
+    @classmethod
+    async def get_first(
+            cls,
+            db: AsyncSession,
+            *statements: list[BinaryExpression],
+    ):
+        """
+        Select first element
+        """
+
+        query = cls.query_select(*statements, offset=0, limit=1)
+        return await cls.execute_first(db, query)
+
+    @classmethod
+    async def get_multi(
+            cls,
+            db: AsyncSession,
+            *statements: list[BinaryExpression],
+            offset: Optional[int] = None,
+            limit: Optional[int] = None,
+    ):
+        query = cls.query_select(*statements, offset=offset, limit=limit)
+
+        result = await db.execute(query)
+        result = result.scalars().all()
+
+        return result

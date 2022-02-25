@@ -38,7 +38,7 @@ class UserBase(BaseModel):
 
     @validator('phone')
     def phone_validation(cls, v: str):
-        v = v.strip()
+        v = v.strip() if v else v
 
         if v and not _PHONE_RE.search(v):
             raise ValueError('Invalid phone number')

@@ -1,4 +1,6 @@
-from ..conftest import client
+from httpx import AsyncClient
+
+from ..conftest import app_fastapi, base_url
 
 
 mock_username = 'test@test.com'
@@ -27,14 +29,19 @@ mock_user_register_response = {
 
 
 class TestAuth:
-    def test_registration(self):
-        response = client.post(
-            '/auth/register',
-            json=mock_user_register,
-        )
+    async def test_registration(self):
+        async with AsyncClient(app=app_fastapi, base_url=base_url) as client:
+            # TODO: Bug
+            response = await client.post(
+                '/auth/register',
+                content=mock_user_register,
+            )
 
-        assert response.status_code == 200,\
-            'Wrong status code'
+            assert response.status_code == 200
+            assert response.json() == mock_user_register_response
 
-        assert response.json() == mock_user_register_response,\
-            'Incorrect response'
+    async def test_free(self):
+        async with AsyncClient(app=app_fastapi, base_url=base_url) as client:
+            response = await client.get('/auth/test_free')
+
+            assert response.status_code == 200

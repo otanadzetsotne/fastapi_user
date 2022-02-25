@@ -2,13 +2,13 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request, Depends
 
-from ..database.base import db
 from ..crud import CRUDUser, CRUDSession
 from ..utils.security import HashContext, JWT, JWTRefresh
 from ..utils.randomizer import Randomizer
 from ..utils.session import SessionUtil
 from ..dependencies.settings import Settings, get_settings
 from ..dependencies.templates import get_templates
+from ..dependencies.db import get_db_session
 from ..dependencies.user import (
     user_not_exist,
     user_valid_auth,
@@ -32,6 +32,7 @@ settings: Settings = get_settings()
 @router_auth.post(path='/register', response_model=UserBase)
 async def register(
         user=Depends(user_not_exist),
+        db=Depends(get_db_session),
 ):
     # Hash password
     password_hash = HashContext.password.hash(user.password)
@@ -50,6 +51,7 @@ async def register(
 async def login(
         request: Request,
         user=Depends(user_valid_password),
+        db=Depends(get_db_session),
 ):
     # Payload for jwt token
     payload = {'sub': user.username, 'user_id': user.id}

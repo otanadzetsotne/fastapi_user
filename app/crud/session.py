@@ -1,12 +1,12 @@
-from databases import Database
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .base import CRUD
-from ..database.models import sessions
+from ..database.models import Session as SessionModel
 from ..schemas import SessionData, SessionAgent, Session, SessionMeta
 
 
 class CRUDSession(CRUD):
-    model = sessions
+    model = SessionModel
     schema = Session
     schema_create = SessionData
     schema_update = SessionData
@@ -14,25 +14,25 @@ class CRUDSession(CRUD):
     @classmethod
     async def delete_by_agent(
             cls,
-            db: Database,
+            db: AsyncSession,
             session: SessionAgent,
     ):
-        return await cls.delete_where(
+        return await cls.delete_first(
             db,
-            cls.model.c.user_id == session.user_id,
-            cls.model.c.agent == session.agent,
+            cls.model.user_id == session.user_id,
+            cls.model.agent == session.agent,
         )
 
     @classmethod
     async def update_by_agent(
             cls,
-            db: Database,
+            db: AsyncSession,
             session: SessionData,
     ) -> Session:
-        return await cls.update_where(
+        return await cls.update_first(
             db,
-            cls.model.c.user_id == session.user_id,
-            cls.model.c.agent == session.agent,
+            cls.model.user_id == session.user_id,
+            cls.model.agent == session.agent,
             refresh_token=session.token,
             expires=session.expires,
         )
@@ -40,12 +40,12 @@ class CRUDSession(CRUD):
     @classmethod
     async def get_by_meta(
             cls,
-            db: Database,
+            db: AsyncSession,
             session: SessionMeta,
     ) -> Session:
-        return await cls.get_where(
+        return await cls.get_first(
             db,
-            cls.model.c.user_id == session.user_id,
-            cls.model.c.agent == session.agent,
-            cls.model.c.token == session.token,
+            cls.model.user_id == session.user_id,
+            cls.model.agent == session.agent,
+            cls.model.token == session.token,
         )

@@ -4,10 +4,10 @@ from jose import JWTError, jwt
 from fastapi import Request, Header, Depends, Path
 from fastapi.security import OAuth2PasswordBearer
 
+from .db import get_db_session
 from .settings import get_settings, Settings
 from .. import schemas
 from ..crud import CRUDSession
-from ..database.base import db
 from ..utils.security import JWTRefresh
 from ..utils.session import SessionUtil
 from ..exceptions import InvalidCredentials, RefreshTokenExpired
@@ -93,6 +93,7 @@ class JWTRefreshChecker:
             request: Request,
             access_token=Depends(jwt_auth_checked_unexpired),
             refresh_token: str = Header(...),
+            db=Depends(get_db_session),
     ) -> schemas.RefreshTokenChecked:
         refresh_token_valid = JWTRefresh.create(
             access_token.token,

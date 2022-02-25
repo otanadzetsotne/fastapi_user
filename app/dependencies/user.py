@@ -1,10 +1,11 @@
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from .db import get_db_session
 from .token import jwt_auth_checked, jwt_refresh_checked, jwt_confirm_checked
 from .. import schemas
 from ..crud import CRUDUser
-from ..database.base import db
 from ..utils.security import HashContext
 from ..exceptions import (
     UserAlreadyExist,
@@ -15,7 +16,7 @@ from ..exceptions import (
 
 
 class UserExists:
-    async def __call__(self, username: str):
+    async def __call__(self, db, username: str):
         # Get user
         user = await CRUDUser.get_by_username(db, username)
 
@@ -27,8 +28,8 @@ class UserExists:
 
 
 class UserActive(UserExists):
-    async def __call__(self, username: str):
-        user = await super(UserActive, self).__call__(username)
+    async def __call__(self, db, username: str):
+        user = await super(UserActive, self).__call__(db, username)
 
         if user.disabled:
             raise InactiveUser
@@ -37,8 +38,8 @@ class UserActive(UserExists):
 
 
 class UserConfirmed(UserActive):
-    async def __call__(self, username: str):
-        user = await super(UserConfirmed, self).__call__(username)
+    async def __call__(self, db, username: str):
+        user = await super(UserConfirmed, self).__call__(db, username)
 
         if not user.confirmed:
             raise UnconfirmedUser
@@ -49,9 +50,10 @@ class UserConfirmed(UserActive):
 class UserPassword(UserExists):
     async def __call__(
             self,
+            db=Depends(get_db_session),
             form_data: OAuth2PasswordRequestForm = Depends(),
     ):
-        user = await super(UserPassword, self).__call__(form_data.username)
+        user = await super(UserPassword, self).__call__(db, form_data.username)
 
         # Check if password is valid
         is_password_valid = HashContext.password.verify(
@@ -75,10 +77,11 @@ class UserValid:
 
     async def __call__(
             self,
+            db: AsyncSession,
             token: schemas.AccessTokenChecked,
     ):
         username = token.payload.get('sub')
-        token.user = await self.user_checker.__call__(username)
+        token.user = await self.user_checker.__call__(db, username)
 
         return token
 
@@ -88,9 +91,10 @@ class UserAuth(UserValid):
 
     async def __call__(
             self,
+            db=Depends(get_db_session),
             access_token=Depends(jwt_auth_checked),
     ):
-        return await super(UserAuth, self).__call__(access_token)
+        return await super(UserAuth, self).__call__(db, access_token)
 
 
 # Using for access token validation
@@ -102,9 +106,10 @@ class UserAuthRefresh(UserValid):
 
     async def __call__(
             self,
+            db=Depends(get_db_session),
             token=Depends(jwt_refresh_checked),
     ):
-        return await super(UserAuthRefresh, self).__call__(token)
+        return await super(UserAuthRefresh, self).__call__(db, token)
 
 
 # Using for refresh token validation
@@ -116,9 +121,10 @@ class UserConfirm(UserValid):
 
     async def __call__(
             self,
+            db=Depends(get_db_session),
             token=Depends(jwt_confirm_checked),
     ):
-        return await super(UserConfirm, self).__call__(token)
+        return await super(UserConfirm, self).__call__(db, token)
 
 
 # Using for confirmation token validation
@@ -128,6 +134,7 @@ user_valid_confirmation = UserConfirm()
 # Using for registration validation
 async def user_not_exist(
         user: schemas.UserIn,
+        db=Depends(get_db_session),
 ) -> schemas.UserIn:
     """
     Check if user with gotten email not exists

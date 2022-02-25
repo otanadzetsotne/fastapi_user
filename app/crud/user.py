@@ -1,12 +1,12 @@
-from databases import Database
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .base import CRUD
-from ..database.models import users
+from ..database.models import User as UserModel
 from ..schemas import UserData, User
 
 
 class CRUDUser(CRUD):
-    model = users
+    model = UserModel
     schema = User
     schema_create = UserData
     schema_update = UserData
@@ -14,7 +14,7 @@ class CRUDUser(CRUD):
     @classmethod
     async def get_by_username(
             cls,
-            db: Database,
+            db: AsyncSession,
             username: str,
     ) -> User:
-        return await cls.get_where(db, cls.model.c.username == username)
+        return await cls.first(db, cls.model.username == username)
