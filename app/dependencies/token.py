@@ -92,16 +92,15 @@ class JWTRefreshChecker:
             refresh_token: str = Header(...),
             db=Depends(get_db_session),
     ) -> schemas.RefreshTokenChecked:
-        refresh_token_valid = JWTRefresh.create(
-            access_token.token,
-            settings.secret.refresh_key,
-        )
-
-        if refresh_token != refresh_token_valid:
+        if not JWTRefresh.verify(
+                access_token.token,
+                settings.secret.refresh_key,
+                refresh_token,
+        ):
             raise InvalidCredentials
 
         session_meta = SessionUtil.create_meta(
-            user_id=access_token.payload.get('id'),
+            user_id=access_token.payload.get('user_id'),
             refresh_token=refresh_token,
             request=request,
         )

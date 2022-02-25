@@ -164,7 +164,10 @@ class CRUD(metaclass=ABCMeta):
         """
 
         query = cls.query_select(*statements, offset=0, limit=1)
-        return await cls.execute_first(db, query)
+        result = await cls.execute_first(db, query)
+        result = cls.schema(**result.__dict__)
+
+        return result
 
     @classmethod
     async def get_multi(
@@ -176,7 +179,8 @@ class CRUD(metaclass=ABCMeta):
     ):
         query = cls.query_select(*statements, offset=offset, limit=limit)
 
-        result = await db.execute(query)
-        result = result.scalars().all()
+        results = await db.execute(query)
+        results = results.scalars().all()
+        results = [cls.schema(**result.__dict__) for result in results]
 
-        return result
+        return results

@@ -53,3 +53,15 @@ class JWTRefresh:
         refresh_token = HashContext.token.hash(payload)
 
         return refresh_token
+
+    @classmethod
+    def verify(
+            cls,
+            jwt_token: str,
+            refresh_key: str,
+            refresh_token: str,
+    ):
+        return HashContext.token.verify(
+            jwt_token + refresh_key,
+            refresh_token,
+        )
