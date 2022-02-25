@@ -17,4 +17,4 @@ class CRUDUser(CRUD):
             db: AsyncSession,
             username: str,
     ) -> User:
-        return await cls.first(db, cls.model.username == username)
+        return await cls.get_first(db, cls.model.username == username)
