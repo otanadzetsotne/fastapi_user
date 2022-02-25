@@ -81,10 +81,7 @@ class JWTConfirmChecker(JWTChecker):
         return await super(JWTConfirmChecker, self).__call__(token)
 
 
-jwt_confirm_checked = JWTConfirmChecker(
-    verify_exp=False,
-    require_exp=False,
-)
+jwt_confirm_checked = JWTConfirmChecker()
 
 
 class JWTRefreshChecker:

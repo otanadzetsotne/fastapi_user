@@ -18,6 +18,7 @@ class Token(BaseModel):
     algorithm: str = 'HS256'
     access_expires: timedelta = timedelta(minutes=30)
     refresh_expires: timedelta = timedelta(days=30)
+    confirm_expires: timedelta = timedelta(days=30)
 
 
 class SMTP(BaseModel):

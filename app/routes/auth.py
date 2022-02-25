@@ -1,11 +1,14 @@
+import time
 from datetime import datetime
 
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, BackgroundTasks
+from pydantic import EmailStr
 
 from ..crud import CRUDUser, CRUDSession
 from ..utils.security import HashContext, JWT, JWTRefresh
 from ..utils.randomizer import Randomizer
 from ..utils.session import SessionUtil
+from ..dependencies.smtp import get_smtp, SMTP
 from ..dependencies.settings import Settings, get_settings
 from ..dependencies.templates import get_templates
 from ..dependencies.db import get_db_session
@@ -29,8 +32,19 @@ templates = get_templates()
 settings: Settings = get_settings()
 
 
+def confirmation(
+        msg_to: EmailStr,
+        msg: str,
+        smtp=Depends(get_smtp),
+):
+    # TODO: Normal mailing
+    # smtp.sendmail(settings.smtp.msg_from, msg_to, msg)
+    pass
+
+
 @router_auth.post(path='/register', response_model=UserBase)
 async def register(
+        background_tasks: BackgroundTasks,
         user=Depends(user_not_exist),
         db=Depends(get_db_session),
 ):
@@ -41,9 +55,17 @@ async def register(
     # Insert user to DB
     user = await CRUDUser.create(db, user_db)
 
-    # TODO: confirmation code send
+    # Create confirmation token
+    payload = {'sub': user.username, 'user_id': user.id}
+    confirm_token = JWT.create(
+        payload,
+        settings.token.algorithm,
+        settings.token.confirm_expires,
+        settings.secret.confirm_key,
+    )
+    # Send confirmation token
+    background_tasks.add_task(confirmation, user.username, confirm_token)
 
-    # TODO: Return password hash is not safe
     return user
 
 
