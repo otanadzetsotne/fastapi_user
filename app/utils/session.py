@@ -25,14 +25,14 @@ class SessionUtil:
         :return:
         """
 
-        session_unexpired = cls.create_meta(
+        session_meta = cls.create_meta(
             user_id=user_id,
             refresh_token=refresh_token,
             request=request,
         )
 
         return SessionData(
-            **session_unexpired.__dict__,
+            **session_meta.__dict__,
             expires=datetime.now() + settings.token.refresh_expires,
         )
 

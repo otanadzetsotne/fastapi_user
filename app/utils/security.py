@@ -4,6 +4,8 @@ from datetime import timedelta
 from jose import jwt
 from passlib.context import CryptContext
 
+from ..schemas import User
+
 
 class HashContext:
     password = CryptContext(
@@ -65,3 +67,39 @@ class JWTRefresh:
             jwt_token + refresh_key,
             refresh_token,
         )
+
+
+class JWTAuthPair:
+    @staticmethod
+    def create(
+            user: User,
+            algorithm: str,
+            access_expires: timedelta,
+            access_key: str,
+            refresh_key: str,
+    ) -> tuple[str, str]:
+        """
+        Create auth token pairs
+        :param user: User object with necessary payload data
+        :param algorithm: encryption algorithm
+        :param access_expires: access token expire time
+        :param access_key: access token secret key
+        :param refresh_key: refresh token secret key
+        :return: access_token and refresh_token
+        """
+
+        payload = {'sub': user.username, 'user_id': user.id}
+
+        access_token = JWT.create(
+            payload,
+            algorithm,
+            access_expires,
+            access_key,
+        )
+
+        refresh_token = JWTRefresh.create(
+            access_token,
+            refresh_key,
+        )
+
+        return access_token, refresh_token

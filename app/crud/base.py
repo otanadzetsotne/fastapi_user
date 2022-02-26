@@ -165,7 +165,8 @@ class CRUD(metaclass=ABCMeta):
 
         query = cls.query_select(*statements, offset=0, limit=1)
         result = await cls.execute_first(db, query)
-        result = cls.schema(**result.__dict__)
+        if result:
+            result = cls.schema(**result.__dict__)
 
         return result
 
@@ -181,6 +182,7 @@ class CRUD(metaclass=ABCMeta):
 
         results = await db.execute(query)
         results = results.scalars().all()
-        results = [cls.schema(**result.__dict__) for result in results]
+        if results:
+            results = [cls.schema(**result.__dict__) for result in results]
 
         return results

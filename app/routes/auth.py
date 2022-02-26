@@ -1,11 +1,8 @@
-import time
-from datetime import datetime
-
 from fastapi import APIRouter, Request, Depends, BackgroundTasks
 from pydantic import EmailStr
 
 from ..crud import CRUDUser, CRUDSession
-from ..utils.security import HashContext, JWT, JWTRefresh
+from ..utils.security import HashContext, JWT, JWTAuthPair
 from ..utils.randomizer import Randomizer
 from ..utils.session import SessionUtil
 from ..dependencies.smtp import get_smtp, SMTP
@@ -32,21 +29,22 @@ templates = get_templates()
 settings: Settings = get_settings()
 
 
-def confirmation(
+def send_mail(
+        smtp,
         msg_to: EmailStr,
         msg: str,
-        smtp=Depends(get_smtp),
 ):
     # TODO: Normal mailing
     # smtp.sendmail(settings.smtp.msg_from, msg_to, msg)
     pass
 
 
-@router_auth.post(path='/register', response_model=UserBase)
+@router_auth.post('/register', response_model=UserBase)
 async def register(
         background_tasks: BackgroundTasks,
         user=Depends(user_not_exist),
         db=Depends(get_db_session),
+        smtp=Depends(get_smtp),
 ):
     # Hash password
     password_hash = HashContext.password.hash(user.password)
@@ -64,7 +62,7 @@ async def register(
         settings.secret.confirm_key,
     )
     # Send confirmation token
-    background_tasks.add_task(confirmation, user.username, confirm_token)
+    background_tasks.add_task(send_mail, smtp, user.username, confirm_token)
 
     return user
 
@@ -75,20 +73,11 @@ async def login(
         user=Depends(user_valid_password),
         db=Depends(get_db_session),
 ):
-    # Payload for jwt token
-    payload = {'sub': user.username, 'user_id': user.id}
-
-    # Create token for user
-    access_token = JWT.create(
-        payload,
+    access_token, refresh_token = JWTAuthPair.create(
+        user,
         settings.token.algorithm,
         settings.token.access_expires,
         settings.secret.jwt_key,
-    )
-
-    # Refresh token for access token update
-    refresh_token = JWTRefresh.create(
-        access_token,
         settings.secret.refresh_key,
     )
 
@@ -114,16 +103,24 @@ async def login(
 
 
 @router_auth.post('/token')
-async def token_refresh(token=Depends(user_valid_refresh)):
-    return token
+async def token_refresh(
+        request: Request,
+        token=Depends(user_valid_refresh),
+        db=Depends(get_db_session),
+):
+    return await login(request, token.user, db)
 
 
-@router_auth.get('/confirm')
-async def confirm(token=Depends(user_valid_confirmation)):
-    return token
+@router_auth.get('/confirm/{token}')
+async def confirm(
+        request: Request,
+        token=Depends(user_valid_confirmation),
+        db=Depends(get_db_session),
+):
+    return await login(request, token.user, db)
 
 
-@router_auth.post('/test')
+@router_auth.get('/test')
 def test(user=Depends(user_valid_auth)):
     return user
 
