@@ -5,6 +5,7 @@ from ..crud import CRUDUser, CRUDSession
 from ..utils.security import HashContext, JWT, JWTAuthPair
 from ..utils.randomizer import Randomizer
 from ..utils.session import SessionUtil
+from ..utils.mail import send
 from ..dependencies.smtp import get_smtp, SMTP
 from ..dependencies.settings import Settings, get_settings
 from ..dependencies.templates import get_templates
@@ -27,16 +28,6 @@ from ..schemas import (
 router_auth = APIRouter(prefix='/auth')
 templates = get_templates()
 settings: Settings = get_settings()
-
-
-def send_mail(
-        smtp,
-        msg_to: EmailStr,
-        msg: str,
-):
-    # TODO: Normal mailing
-    # smtp.sendmail(settings.smtp.msg_from, msg_to, msg)
-    pass
 
 
 @router_auth.post('/register', response_model=UserBase)
@@ -62,7 +53,7 @@ async def register(
         settings.secret.confirm_key,
     )
     # Send confirmation token
-    background_tasks.add_task(send_mail, smtp, user.username, confirm_token)
+    background_tasks.add_task(send, smtp, user.username, confirm_token)
 
     return user
 
