@@ -7,6 +7,7 @@ class Secret(BaseModel):
     jwt_key: str
     refresh_key: str
     confirm_key: str
+    client_key: str
 
 
 # class _SettingsDB(BaseModel):
@@ -16,9 +17,13 @@ class Secret(BaseModel):
 class Token(BaseModel):
     type: str = 'bearer'
     algorithm: str = 'HS256'
-    access_expires: timedelta = timedelta(minutes=30)
+    client_length: int = 1024
+    client_entropy: int = 56
+    access_expires: timedelta = timedelta(hours=1)
     refresh_expires: timedelta = timedelta(days=30)
     confirm_expires: timedelta = timedelta(days=30)
+    client_expires: timedelta = timedelta(hours=1)
+    client_secret_expires: timedelta = timedelta(days=365)
 
 
 class SMTP(BaseModel):

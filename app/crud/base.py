@@ -123,7 +123,7 @@ class CRUD(metaclass=ABCMeta):
         )
 
     @classmethod
-    async def delete_first(
+    async def delete_where(
             cls,
             db: AsyncSession,
             *statements,
@@ -136,6 +136,14 @@ class CRUD(metaclass=ABCMeta):
         query = cls.query_where(query, *statements)
 
         await db.execute(query)
+
+    @classmethod
+    async def delete_by_id(
+            cls,
+            db: AsyncSession,
+            entity_id: int,
+    ):
+        return await cls.delete_where(db, cls.model.id == entity_id)
 
     @classmethod
     async def update_first(
@@ -158,7 +166,7 @@ class CRUD(metaclass=ABCMeta):
             cls,
             db: AsyncSession,
             *statements: list[BinaryExpression],
-    ):
+    ) -> Optional[SchemaType]:
         """
         Select first element
         """

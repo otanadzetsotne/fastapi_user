@@ -26,3 +26,13 @@ RefreshTokenExpired = HTTPException(
     status_code=403,
     detail='Refresh token expired',
 )
+
+InvalidClient = HTTPException(
+    status_code=403,
+    detail='Invalid client'
+)
+
+ClientExpired = HTTPException(
+    status_code=403,
+    detail='Client expired'
+)

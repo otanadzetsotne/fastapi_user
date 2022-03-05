@@ -3,8 +3,9 @@ from datetime import timedelta
 
 from jose import jwt
 from passlib.context import CryptContext
+from passlib.pwd import genword
 
-from ..schemas import User
+from .. import schemas
 
 
 class HashContext:
@@ -32,8 +33,8 @@ class JWT:
 
         # Prepare data
         to_encode = payload.copy()
-        expire = datetime.utcnow() + jwt_expires
-        to_encode.update({'exp': expire})
+        expires = datetime.utcnow() + jwt_expires
+        to_encode.update({'exp': expires})
 
         # Create JWT
         encoded_jwt = jwt.encode(
@@ -72,7 +73,7 @@ class JWTRefresh:
 class JWTAuthPair:
     @staticmethod
     def create(
-            user: User,
+            user: schemas.User,
             algorithm: str,
             access_expires: timedelta,
             access_key: str,
@@ -88,7 +89,12 @@ class JWTAuthPair:
         :return: access_token and refresh_token
         """
 
-        payload = {'sub': user.username, 'user_id': user.id}
+        payload = {
+            'iss': 'auth',
+            'sub': user.username,
+            'username': user.username,
+            'user_id': user.id,
+        }
 
         access_token = JWT.create(
             payload,
@@ -103,3 +109,33 @@ class JWTAuthPair:
         )
 
         return access_token, refresh_token
+
+
+class Client:
+    @staticmethod
+    def secret(
+            length: int,
+            entropy: int,
+    ) -> str:
+        return genword(length=length, entropy=entropy)
+
+    @staticmethod
+    def token(
+            client: schemas.Client,
+            algorithm: str,
+            client_expires: timedelta,
+            client_key: str,
+    ):
+        payload = {
+            'iss': 'client',
+            'sub': client.id,
+            'client_id': client.id,
+            'user_id': client.user_id,
+        }
+
+        return JWT.create(
+            payload,
+            algorithm,
+            client_expires,
+            client_key,
+        )

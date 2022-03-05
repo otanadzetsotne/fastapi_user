@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Request, Depends, BackgroundTasks
-from pydantic import EmailStr
 
 from ..crud import CRUDUser, CRUDSession
 from ..utils.security import HashContext, JWT, JWTAuthPair
 from ..utils.randomizer import Randomizer
 from ..utils.session import SessionUtil
 from ..utils.mail import send
-from ..dependencies.smtp import get_smtp, SMTP
+from ..dependencies.smtp import get_smtp
 from ..dependencies.settings import Settings, get_settings
 from ..dependencies.templates import get_templates
 from ..dependencies.db import get_db_session
@@ -52,6 +51,7 @@ async def register(
         settings.token.confirm_expires,
         settings.secret.confirm_key,
     )
+
     # Send confirmation token
     background_tasks.add_task(send, smtp, user.username, confirm_token)
 

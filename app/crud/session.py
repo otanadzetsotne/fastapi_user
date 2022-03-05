@@ -17,7 +17,7 @@ class CRUDSession(CRUD):
             db: AsyncSession,
             session: SessionAgent,
     ):
-        return await cls.delete_first(
+        return await cls.delete_where(
             db,
             cls.model.user_id == session.user_id,
             cls.model.agent == session.agent,

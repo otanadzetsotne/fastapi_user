@@ -146,3 +146,7 @@ async def user_not_exist(
         raise UserAlreadyExist
 
     return user
+
+
+# TODO: We need to refuse to get entire user data from db in jwt validation
+#  also, we even need to remove user existence check
