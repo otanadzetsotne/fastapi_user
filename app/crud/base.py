@@ -73,7 +73,15 @@ class CRUD(metaclass=ABCMeta):
     # Base executes
 
     @staticmethod
+    async def execute(
+            db: AsyncSession,
+            query,
+    ):
+        return await db.execute(query)
+
+    @classmethod
     async def execute_first(
+            cls,
             db: AsyncSession,
             query,
     ):
@@ -81,13 +89,14 @@ class CRUD(metaclass=ABCMeta):
         Execute query and get first
         """
 
-        result = await db.execute(query)
+        result = await cls.execute(db, query)
         result = result.scalars().first()
 
         return result
 
-    @staticmethod
+    @classmethod
     async def execute_all(
+            cls,
             db: AsyncSession,
             query,
     ):
@@ -95,7 +104,7 @@ class CRUD(metaclass=ABCMeta):
         Execute query and get all
         """
 
-        result = await db.execute(query)
+        result = await cls.execute(db, query)
         result = result.scalars().all()
 
         return result
@@ -107,7 +116,7 @@ class CRUD(metaclass=ABCMeta):
             cls,
             db: AsyncSession,
             entity: CreateSchemaType,
-    ):
+    ) -> SchemaType:
         """
         Create and select first
         """
@@ -159,7 +168,16 @@ class CRUD(metaclass=ABCMeta):
         query = update(cls.model)
         query = cls.query_where(query, *statements)
         query = query.values(**values)
-        return await cls.execute_first(db, query)
+        await cls.execute(db, query)
+
+    @classmethod
+    async def update_by_id(
+            cls,
+            db: AsyncSession,
+            entity_id: int,
+            **values,
+    ):
+        await cls.update_first(db, cls.model.id == entity_id, **values)
 
     @classmethod
     async def get_first(
@@ -194,3 +212,11 @@ class CRUD(metaclass=ABCMeta):
             results = [cls.schema(**result.__dict__) for result in results]
 
         return results
+
+    @classmethod
+    async def get_by_id(
+            cls,
+            db: AsyncSession,
+            entity_id: int,
+    ):
+        return await cls.get_first(db, cls.model.id == entity_id)

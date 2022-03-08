@@ -1,3 +1,4 @@
+from typing import Type
 from datetime import datetime
 
 from jose import JWTError, jwt
@@ -6,16 +7,29 @@ from fastapi.security import OAuth2PasswordBearer
 
 from .db import get_db_session
 from .settings import get_settings, Settings
-from .. import schemas
 from ..crud import CRUDSession
 from ..utils.security import JWTRefresh
 from ..utils.session import SessionUtil
 from ..exceptions import InvalidCredentials, RefreshTokenExpired
+from ..schemas import (
+    TokenPayloadType,
+    TokenCheckedType,
+    AccessTokenPayload,
+    AccessTokenChecked,
+    ConfirmTokenPayload,
+    ConfirmTokenChecked,
+    ClientTokenPayload,
+    ClientTokenChecked,
+    RefreshAccessTokenChecked,
+)
 
 
 settings: Settings = get_settings()
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl='auth/login',
+)
+oauth2_scheme_client = OAuth2PasswordBearer(
+    tokenUrl='client/token'
 )
 
 
@@ -28,14 +42,13 @@ class JWTChecker:
         'require_exp': True,
     }
 
+    payload_type: Type[TokenPayloadType]
+    token_type: Type[TokenCheckedType]
+
     def __init__(self, **kwargs):
         self.options = kwargs
 
-    async def __call__(self, token: str) -> schemas.AccessTokenChecked:
-        """
-        Check if access token is valid
-        """
-
+    def __call__(self, token: str) -> TokenCheckedType:
         try:
             # Validate token
             payload = jwt.decode(
@@ -47,21 +60,22 @@ class JWTChecker:
         except JWTError:
             raise InvalidCredentials
 
-        return schemas.AccessTokenChecked(
+        return self.token_type(
             token=token,
-            payload=payload,
-            # user=user,
+            payload=self.payload_type(**payload),
         )
 
 
 class JWTAuthChecker(JWTChecker):
     key = settings.secret.jwt_key
+    payload_type = AccessTokenPayload
+    token_type = AccessTokenChecked
 
-    async def __call__(
+    def __call__(
             self,
             token: str = Depends(oauth2_scheme),
-    ) -> schemas.AccessTokenChecked:
-        return await super(JWTAuthChecker, self).__call__(token)
+    ) -> AccessTokenChecked:
+        return super(JWTAuthChecker, self).__call__(token)
 
 
 jwt_auth_checked = JWTAuthChecker()
@@ -73,52 +87,61 @@ jwt_auth_checked_unexpired = JWTAuthChecker(
 
 class JWTConfirmChecker(JWTChecker):
     key = settings.secret.confirm_key
+    payload_type = ConfirmTokenPayload
+    token_type = ConfirmTokenChecked
 
-    async def __call__(
+    def __call__(
             self,
             token: str = Path(...),
-    ) -> schemas.AccessTokenChecked:
-        return await super(JWTConfirmChecker, self).__call__(token)
+    ) -> ConfirmTokenChecked:
+        return super(JWTConfirmChecker, self).__call__(token)
 
 
 jwt_confirm_checked = JWTConfirmChecker()
 
 
-class JWTRefreshChecker:
-    async def __call__(
+class JWTClientChecked(JWTChecker):
+    key = settings.secret.client_key
+    payload_type = ClientTokenPayload
+    token_Type = ClientTokenChecked
+
+    def __call__(
             self,
-            request: Request,
-            access_token=Depends(jwt_auth_checked_unexpired),
-            refresh_token: str = Header(...),
-            db=Depends(get_db_session),
-    ) -> schemas.RefreshTokenChecked:
-        if not JWTRefresh.verify(
-                access_token.token,
-                settings.secret.refresh_key,
-                refresh_token,
-        ):
-            raise InvalidCredentials
-
-        session_meta = SessionUtil.create_meta(
-            user_id=access_token.payload.get('user_id'),
-            refresh_token=refresh_token,
-            request=request,
-        )
-
-        session = await CRUDSession.get_by_meta(db, session_meta)
-
-        # Check if session exists
-        if session is None:
-            raise InvalidCredentials
-
-        # Check if session expired
-        if session.expires <= datetime.now():
-            raise RefreshTokenExpired
-
-        return schemas.RefreshTokenChecked(
-            **access_token.__dict__,
-            session=session,
-        )
+            token: str = Depends(oauth2_scheme_client),
+    ):
+        return super(JWTClientChecked, self).__call__(token)
 
 
-jwt_refresh_checked = JWTRefreshChecker()
+async def jwt_refresh_checked(
+        request: Request,
+        access_token=Depends(jwt_auth_checked_unexpired),
+        refresh_token: str = Header(...),
+        db=Depends(get_db_session),
+) -> RefreshAccessTokenChecked:
+    if not JWTRefresh.verify(
+            access_token.token,
+            settings.secret.refresh_key,
+            refresh_token,
+    ):
+        raise InvalidCredentials
+
+    session_meta = SessionUtil.create_meta(
+        user_id=access_token.payload.user_id,
+        refresh_token=refresh_token,
+        request=request,
+    )
+
+    session = await CRUDSession.get_by_meta(db, session_meta)
+
+    # Check if session exists
+    if session is None:
+        raise InvalidCredentials
+
+    # Check if session expired
+    if session.expires <= datetime.now():
+        raise RefreshTokenExpired
+
+    return RefreshAccessTokenChecked(
+        **dict(access_token),
+        session=session,
+    )

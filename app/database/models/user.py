@@ -19,4 +19,4 @@ class User(Base):
     created = Column(DateTime, server_default=func.now())
 
     sessions = relationship('Session', back_populates='user')
-    client = relationship('Client', back_populates='user')
+    client = relationship('Client', back_populates='user', uselist=False)

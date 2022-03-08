@@ -17,7 +17,7 @@ class Secret(BaseModel):
 class Token(BaseModel):
     type: str = 'bearer'
     algorithm: str = 'HS256'
-    client_length: int = 1024
+    client_length: int = 255
     client_entropy: int = 56
     access_expires: timedelta = timedelta(hours=1)
     refresh_expires: timedelta = timedelta(days=30)

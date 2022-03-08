@@ -1,3 +1,4 @@
+from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column, Integer, String, DateTime
 
 from ..base import Base
@@ -11,3 +12,5 @@ class Session(Base):
     agent = Column(String(), nullable=False)
     token = Column(String(60), nullable=False)
     expires = Column(DateTime, nullable=False)
+
+    user = relationship('User', back_populates='sessions')

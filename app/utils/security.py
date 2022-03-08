@@ -5,7 +5,7 @@ from jose import jwt
 from passlib.context import CryptContext
 from passlib.pwd import genword
 
-from .. import schemas
+from ..schemas import ClientTokenPayload, TokenPayloadType, AccessTokenPayload
 
 
 class HashContext:
@@ -22,7 +22,7 @@ class HashContext:
 class JWT:
     @staticmethod
     def create(
-            payload: dict,
+            payload: TokenPayloadType,
             jwt_algorithm: str,
             jwt_expires: timedelta,
             jwt_key: str,
@@ -32,18 +32,16 @@ class JWT:
         """
 
         # Prepare data
-        to_encode = payload.copy()
         expires = datetime.utcnow() + jwt_expires
+        to_encode = dict(payload).copy()
         to_encode.update({'exp': expires})
 
         # Create JWT
-        encoded_jwt = jwt.encode(
+        return jwt.encode(
             claims=to_encode,
             key=jwt_key,
             algorithm=jwt_algorithm,
         )
-
-        return encoded_jwt
 
 
 class JWTRefresh:
@@ -64,16 +62,13 @@ class JWTRefresh:
             refresh_key: str,
             refresh_token: str,
     ):
-        return HashContext.token.verify(
-            jwt_token + refresh_key,
-            refresh_token,
-        )
+        return HashContext.token.verify(jwt_token + refresh_key, refresh_token)
 
 
 class JWTAuthPair:
     @staticmethod
     def create(
-            user: schemas.User,
+            payload: AccessTokenPayload,
             algorithm: str,
             access_expires: timedelta,
             access_key: str,
@@ -81,7 +76,7 @@ class JWTAuthPair:
     ) -> tuple[str, str]:
         """
         Create auth token pairs
-        :param user: User object with necessary payload data
+        :param payload: Payload object with necessary payload data
         :param algorithm: encryption algorithm
         :param access_expires: access token expire time
         :param access_key: access token secret key
@@ -89,31 +84,15 @@ class JWTAuthPair:
         :return: access_token and refresh_token
         """
 
-        payload = {
-            'iss': 'auth',
-            'sub': user.username,
-            'username': user.username,
-            'user_id': user.id,
-        }
+        access = JWT.create(payload, algorithm, access_expires, access_key)
+        refresh = JWTRefresh.create(access, refresh_key)
 
-        access_token = JWT.create(
-            payload,
-            algorithm,
-            access_expires,
-            access_key,
-        )
-
-        refresh_token = JWTRefresh.create(
-            access_token,
-            refresh_key,
-        )
-
-        return access_token, refresh_token
+        return access, refresh
 
 
-class Client:
+class JWTClient:
     @staticmethod
-    def secret(
+    def random_secret(
             length: int,
             entropy: int,
     ) -> str:
@@ -121,21 +100,9 @@ class Client:
 
     @staticmethod
     def token(
-            client: schemas.Client,
+            payload: ClientTokenPayload,
             algorithm: str,
             client_expires: timedelta,
             client_key: str,
     ):
-        payload = {
-            'iss': 'client',
-            'sub': client.id,
-            'client_id': client.id,
-            'user_id': client.user_id,
-        }
-
-        return JWT.create(
-            payload,
-            algorithm,
-            client_expires,
-            client_key,
-        )
+        return JWT.create(payload, algorithm, client_expires, client_key)
