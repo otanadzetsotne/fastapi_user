@@ -42,10 +42,16 @@ class DataBase(BaseModel):
     engine: str
 
 
+class Sentry(BaseModel):
+    url: str
+    traces_sample_rate: float = 1.0
+
+
 class Settings(BaseSettings):
-    db: DataBase
     smtp: SMTP
+    db: DataBase
     secret: Secret
+    sentry: Sentry
     token: Token = Token()
 
     class Config:
