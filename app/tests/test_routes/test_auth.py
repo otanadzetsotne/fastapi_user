@@ -1,6 +1,5 @@
-from httpx import AsyncClient
-
-from ..conftest import app_fastapi, base_url
+from fastapi.testclient import TestClient
+from app.main import app_fastapi
 
 
 mock_username = 'test@test.com'
@@ -29,19 +28,14 @@ mock_user_register_response = {
 
 
 class TestAuth:
-    async def test_registration(self):
-        async with AsyncClient(app=app_fastapi, base_url=base_url) as client:
-            # TODO: Bug
-            response = await client.post(
-                '/auth/register',
-                content=mock_user_register,
-            )
+    client = TestClient(app_fastapi)
 
-            assert response.status_code == 200
-            assert response.json() == mock_user_register_response
+    def test_registration(self):
+        response = self.client.post('/auth/register', json=mock_user_register)
+        assert response.status_code == 200
+        assert response.json() == mock_user_register_response
 
-    async def test_free(self):
-        async with AsyncClient(app=app_fastapi, base_url=base_url) as client:
-            response = await client.get('/auth/test_free')
-
-            assert response.status_code == 200
+    def test_free(self):
+        response = TestClient(app_fastapi).get('/auth/test_free')
+        assert response.status_code == 200
+        assert response.json() == {'result': True}

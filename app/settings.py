@@ -1,6 +1,13 @@
+from enum import Enum
 from datetime import timedelta
 
 from pydantic import BaseModel, BaseSettings
+
+
+class Environment(Enum):
+    prod = 'prod'
+    test = 'test'
+    dev = 'dev'
 
 
 class Secret(BaseModel):
@@ -8,10 +15,6 @@ class Secret(BaseModel):
     refresh_key: str
     confirm_key: str
     client_key: str
-
-
-# class _SettingsDB(BaseModel):
-#     url: str
 
 
 class Token(BaseModel):
@@ -34,6 +37,7 @@ class SMTP(BaseModel):
 
 class DataBase(BaseModel):
     name: str
+    name_testing: str
     host: str
     port: str
     user: str
@@ -53,6 +57,7 @@ class Settings(BaseSettings):
     secret: Secret
     sentry: Sentry
     token: Token = Token()
+    environment: Environment = Environment.prod
 
     class Config:
         env_file = '.env'
