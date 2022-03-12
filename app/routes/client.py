@@ -57,7 +57,7 @@ async def delete_secret(
     await CRUDClient.delete_by_user_id(db, token.payload.user_id)
 
 
-@router_client.post('/token')
+@router_client.post('/token/')
 async def token_secret(
         client=Depends(client_not_expired),
 ):
@@ -81,7 +81,7 @@ async def token_secret(
     )
 
 
-@router_client.post('/test')
+@router_client.post('/test/')
 async def test():
     # TODO: check token and check user validity
     pass
