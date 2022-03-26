@@ -18,3 +18,11 @@ class CRUDUser(CRUD):
             username: str,
     ) -> User:
         return await cls.get_first(db, cls.model.username == username)
+
+    @classmethod
+    async def get_id_by_username(
+            cls,
+            db: AsyncSession,
+            username: str,
+    ):
+        return await cls.get_first(db, cls.model.username == username)

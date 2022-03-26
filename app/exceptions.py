@@ -4,6 +4,11 @@ from fastapi import HTTPException
 InvalidCredentials = HTTPException(
     status_code=401,
     detail='Invalid credentials',
+)
+
+InvalidCredentialsAuth = HTTPException(
+    status_code=401,
+    detail='Invalid credentials',
     headers={"WWW-Authenticate": "Bearer"},
 )
 

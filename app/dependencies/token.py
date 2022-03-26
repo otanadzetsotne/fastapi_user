@@ -10,7 +10,7 @@ from .settings import get_settings, Settings
 from ..crud import CRUDSession
 from ..utils.security import JWTRefresh
 from ..utils.session import SessionUtil
-from ..exceptions import InvalidCredentials, RefreshTokenExpired
+from ..exceptions import InvalidCredentialsAuth, RefreshTokenExpired
 from ..schemas import (
     TokenPayloadType,
     TokenCheckedType,
@@ -21,6 +21,8 @@ from ..schemas import (
     ClientTokenPayload,
     ClientTokenChecked,
     RefreshAccessTokenChecked,
+    PasswordResetPayload,
+    PasswordResetChecked,
 )
 
 
@@ -58,7 +60,7 @@ class JWTChecker:
                 options={**self.options_base, **self.options}
             )
         except JWTError:
-            raise InvalidCredentials
+            raise InvalidCredentialsAuth
 
         return self.token_type(
             token=token,
@@ -100,6 +102,14 @@ class JWTConfirmChecker(JWTChecker):
 jwt_confirm_checked = JWTConfirmChecker()
 
 
+class JWTPasswordResetChecker(JWTConfirmChecker):
+    payload_type = PasswordResetPayload
+    token_type = PasswordResetChecked
+
+
+jwt_password_reset_checked = JWTPasswordResetChecker()
+
+
 class JWTClientChecked(JWTChecker):
     key = settings.secret.client_key
     payload_type = ClientTokenPayload
@@ -123,7 +133,7 @@ async def jwt_refresh_checked(
             settings.secret.refresh_key,
             refresh_token,
     ):
-        raise InvalidCredentials
+        raise InvalidCredentialsAuth
 
     session_meta = SessionUtil.create_meta(
         user_id=access_token.payload.user_id,
@@ -135,7 +145,7 @@ async def jwt_refresh_checked(
 
     # Check if session exists
     if session is None:
-        raise InvalidCredentials
+        raise InvalidCredentialsAuth
 
     # Check if session expired
     if session.expires <= datetime.now():

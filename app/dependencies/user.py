@@ -1,8 +1,8 @@
-from fastapi import Depends
+from fastapi import Depends, Body
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import EmailStr
 
 from .db import get_db_session
-from .token import jwt_auth_checked, jwt_refresh_checked, jwt_confirm_checked
 from ..crud import CRUDUser
 from ..utils.security import HashContext
 from ..schemas import (
@@ -16,7 +16,14 @@ from ..exceptions import (
     UserAlreadyExist,
     InactiveUser,
     InvalidCredentials,
+    InvalidCredentialsAuth,
     UnconfirmedUser,
+)
+from .token import (
+    jwt_auth_checked,
+    jwt_refresh_checked,
+    jwt_confirm_checked,
+    jwt_password_reset_checked,
 )
 
 
@@ -39,7 +46,7 @@ async def user_login_valid(
 
     # Check if user exists
     if user is None:
-        raise InvalidCredentials
+        raise InvalidCredentialsAuth
 
     # Is password valid
     is_password_valid = HashContext.password.verify(
@@ -48,7 +55,7 @@ async def user_login_valid(
     )
 
     if not is_password_valid:
-        raise InvalidCredentials
+        raise InvalidCredentialsAuth
 
     raise_disabled(user.disabled)
     raise_confirmed(user.confirmed)
@@ -92,5 +99,45 @@ async def user_valid_access(
 async def user_valid_confirm(
         token: ConfirmTokenChecked = Depends(jwt_confirm_checked),
 ) -> ConfirmTokenChecked:
+    raise_disabled(token.payload.disabled)
+    return token
+
+
+async def user_update_sensitive(
+        password: str = Body(...),
+        token=Depends(user_valid_confirm),
+        db=Depends(get_db_session)
+):
+    user = await CRUDUser.get_by_id(db, token.payload.user_id)
+
+    # Is password valid
+    is_password_valid = HashContext.password.verify(
+        password,
+        user.password_hash,
+    )
+
+    if not is_password_valid:
+        raise InvalidCredentialsAuth
+
+    return token
+
+
+async def user_password_reset_request(
+        username: EmailStr = Body(...),
+        db=Depends(get_db_session),
+):
+    user = await CRUDUser.get_by_username(db, username)
+
+    if not user:
+        raise InvalidCredentials
+
+    raise_disabled(user.disabled)
+
+    return user
+
+
+async def user_password_reset(
+        token=Depends(jwt_password_reset_checked),
+):
     raise_disabled(token.payload.disabled)
     return token

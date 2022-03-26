@@ -4,6 +4,7 @@ from ..schemas import (
     AccessTokenPayload,
     ConfirmTokenPayload,
     ClientTokenPayload,
+    PasswordResetPayload,
 )
 
 
@@ -25,6 +26,15 @@ class PayloadCreator:
             user_id=user.id,
             username=user.username,
             disabled=user.disabled,
+        )
+
+    @staticmethod
+    def user_to_password_reset(user: User) -> PasswordResetPayload:
+        return PasswordResetPayload(
+            sub=user.id,
+            user_id=user.id,
+            username=user.username,
+            disabled=user.disabled
         )
 
     @staticmethod

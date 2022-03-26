@@ -30,11 +30,14 @@ _PHONE_PATTERN = r'^' \
 _PHONE_RE = re.compile(_PHONE_PATTERN, re.I)
 
 
-class UserBase(BaseModel):
-    username: EmailStr = Field(...)
+class UserUpdatable(BaseModel):
     name: Optional[str] = Field(None)
     surname: Optional[str] = Field(None)
     phone: Optional[str] = Field(None)
+
+
+class UserBase(UserUpdatable):
+    username: EmailStr = Field(...)
 
     @validator('phone')
     def phone_validation(cls, v: str):

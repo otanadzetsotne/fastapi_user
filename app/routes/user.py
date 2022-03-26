@@ -1,8 +1,16 @@
-from fastapi import APIRouter, Request, Depends, BackgroundTasks
+from pydantic import EmailStr
+from fastapi import (
+    APIRouter,
+    Request,
+    Depends,
+    BackgroundTasks,
+    Body,
+    Response,
+)
 
 from .auth import login
 from ..crud import CRUDUser
-from ..schemas import UserBase, UserData, AuthTokenOut
+from ..schemas import UserBase, UserData, UserUpdatable, AuthTokenOut
 
 from ..utils.mail import send
 from ..utils.security import HashContext, JWT
@@ -12,7 +20,14 @@ from ..dependencies.smtp import get_smtp
 from ..dependencies.db import get_db_session
 from ..dependencies.templates import get_templates
 from ..dependencies.settings import Settings, get_settings
-from ..dependencies.user import user_not_exist, user_valid_confirm
+from ..dependencies.user import (
+    user_not_exist,
+    user_valid_confirm,
+    user_valid_access,
+    user_update_sensitive,
+    user_password_reset_request,
+    user_password_reset,
+)
 
 
 router_user = APIRouter(prefix='/user')
@@ -63,3 +78,93 @@ async def confirm(
 
     # Login and return tokens
     return await login(request, user, db)
+
+
+@router_user.put('/')
+async def update_user_data(
+        user_data: UserUpdatable,
+        user=Depends(user_valid_access),
+        db=Depends(get_db_session),
+):
+    await CRUDUser.update_by_id(db, user.payload.user_id, **user_data.__dict__)
+
+
+@router_user.delete('/')
+async def disable_user(
+        token=Depends(user_update_sensitive),
+        db=Depends(get_db_session),
+):
+    await CRUDUser.update_by_id(db, token.payload.user_id, disabled=True)
+
+
+@router_user.put('/password/')
+async def update_password(
+        password_new: str = Body(...),
+        token=Depends(user_update_sensitive),
+        db=Depends(get_db_session),
+):
+    password_hash = HashContext.password.hash(password_new)
+
+    await CRUDUser.update_by_id(
+        db,
+        token.payload.user_id,
+        password_hash=password_hash,
+    )
+
+
+@router_user.put('/username/')
+async def update_username(
+        username_new: EmailStr = Body(...),
+        token=Depends(user_update_sensitive),
+        db=Depends(get_db_session),
+):
+    await CRUDUser.update_by_id(
+        db,
+        token.payload.user_id,
+        username=username_new,
+        confirmed=False,
+    )
+
+    user = await CRUDUser.get_by_id(db, token.payload.user_id)
+
+    # Create confirmation token
+    confirm_token = JWT.create(
+        PayloadCreator.user_to_confirm(user),
+        settings.token.algorithm,
+        settings.token.confirm_expires,
+        settings.secret.confirm_key,
+    )
+
+    # Send confirmation token
+    # background_tasks.add_task(send, smtp, user.username, confirm_token)
+    pass
+
+
+@router_user.post('/password_reset_request/')
+async def password_reset_request(
+        background_tasks: BackgroundTasks,
+        user=Depends(user_password_reset_request),
+        # smtp=Depends(get_smtp),
+):
+    confirm_token = JWT.create(
+        PayloadCreator.user_to_password_reset(user),
+        settings.token.algorithm,
+        settings.token.confirm_expires,
+        settings.secret.confirm_key,
+    )
+
+    # Send confirmation token
+    # background_tasks.add_task(send, smtp, user.username, confirm_token)
+
+
+@router_user.post('/password_reset/')
+async def password_reset(
+        password_new: str,
+        token=Depends(user_password_reset),
+        db=Depends(get_db_session),
+):
+    user_id = token.payload.user_id
+    password_hash = HashContext.password.hash(password_new)
+    await CRUDUser.update_by_id(db, user_id, password_hash=password_hash)
+
+    return Response()

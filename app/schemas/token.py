@@ -33,6 +33,10 @@ class UserTokenPayload(TokenPayload):
     disabled: bool = Field(...)
 
 
+class PasswordResetPayload(UserTokenPayload):
+    iss: str = Field('password_reset', const=True)
+
+
 class AccessTokenPayload(UserTokenPayload):
     iss: str = Field('auth', const=True)
     confirmed: bool = Field(...)
@@ -62,6 +66,10 @@ class AccessTokenChecked(TokenChecked):
 
 class ConfirmTokenChecked(TokenChecked):
     payload: ConfirmTokenPayload = Field(...)
+
+
+class PasswordResetChecked(TokenChecked):
+    payload: PasswordResetPayload = Field(...)
 
 
 class RefreshAccessTokenChecked(AccessTokenChecked):

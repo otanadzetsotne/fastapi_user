@@ -197,6 +197,18 @@ class CRUD(metaclass=ABCMeta):
         return result
 
     @classmethod
+    async def get_id(
+            cls,
+            db: AsyncSession,
+            *statements: list[BinaryExpression],
+    ):
+        query = cls.query_select(*statements, offset=0, limit=1)
+        query = query.with_entities(cls.model.id)
+        result = await cls.execute_first(db, query)
+
+        return result
+
+    @classmethod
     async def get_multi(
             cls,
             db: AsyncSession,
