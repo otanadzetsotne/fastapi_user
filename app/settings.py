@@ -22,6 +22,12 @@ class Token(BaseModel):
     algorithm: str = 'HS256'
     client_length: int = 255
     client_entropy: int = 56
+
+    access_iss = 'auth'
+    confirm_iss = 'confirm'
+    password_reset_iss = 'password_reset'
+    client_iss = 'client'
+
     access_expires: timedelta = timedelta(hours=1)
     refresh_expires: timedelta = timedelta(days=30)
     confirm_expires: timedelta = timedelta(days=30)

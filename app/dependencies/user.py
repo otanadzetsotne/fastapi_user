@@ -18,6 +18,7 @@ from ..exceptions import (
     InvalidCredentials,
     InvalidCredentialsAuth,
     UnconfirmedUser,
+    NotAcceptableUsername,
 )
 from .token import (
     jwt_auth_checked,
@@ -105,7 +106,7 @@ async def user_valid_confirm(
 
 async def user_update_sensitive(
         password: str = Body(...),
-        token=Depends(user_valid_confirm),
+        token=Depends(user_valid_access),
         db=Depends(get_db_session)
 ):
     user = await CRUDUser.get_by_id(db, token.payload.user_id)
@@ -118,6 +119,17 @@ async def user_update_sensitive(
 
     if not is_password_valid:
         raise InvalidCredentialsAuth
+
+    return token
+
+
+async def user_update_username(
+        token=Depends(user_update_sensitive),
+        username_new: EmailStr = Body(...),
+        db=Depends(get_db_session)
+):
+    if await CRUDUser.get_id_by_username(db, username_new):
+        raise NotAcceptableUsername
 
     return token
 

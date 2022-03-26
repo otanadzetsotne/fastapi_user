@@ -1,6 +1,11 @@
 from fastapi import HTTPException
 
 
+NotAcceptableUsername = HTTPException(
+    status_code=400,
+    detail='Not acceptable username'
+)
+
 InvalidCredentials = HTTPException(
     status_code=401,
     detail='Invalid credentials',

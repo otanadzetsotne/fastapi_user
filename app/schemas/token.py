@@ -3,6 +3,10 @@ from typing import TypeVar, Union
 from pydantic import BaseModel, Field, EmailStr
 
 from .session import Session
+from ..dependencies.settings import get_settings, Settings
+
+
+settings: Settings = get_settings()
 
 
 class AccessTokenOut(BaseModel):
@@ -34,20 +38,20 @@ class UserTokenPayload(TokenPayload):
 
 
 class PasswordResetPayload(UserTokenPayload):
-    iss: str = Field('password_reset', const=True)
+    iss: str = Field(settings.token.password_reset_iss, const=True)
 
 
 class AccessTokenPayload(UserTokenPayload):
-    iss: str = Field('auth', const=True)
+    iss: str = Field(settings.token.access_iss, const=True)
     confirmed: bool = Field(...)
 
 
 class ConfirmTokenPayload(UserTokenPayload):
-    iss: str = Field('confirm', const=True)
+    iss: str = Field(settings.token.confirm_iss, const=True)
 
 
 class ClientTokenPayload(TokenPayload):
-    iss: str = Field('client', const=True)
+    iss: str = Field(settings.token.client_iss, const=True)
     client_id: Union[str, int] = Field(...)
     user_id: Union[str, int] = Field(...)
 

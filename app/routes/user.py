@@ -1,11 +1,11 @@
 from pydantic import EmailStr
 from fastapi import (
-    APIRouter,
+    Body,
     Request,
     Depends,
-    BackgroundTasks,
-    Body,
     Response,
+    APIRouter,
+    BackgroundTasks,
 )
 
 from .auth import login
@@ -22,11 +22,12 @@ from ..dependencies.templates import get_templates
 from ..dependencies.settings import Settings, get_settings
 from ..dependencies.user import (
     user_not_exist,
-    user_valid_confirm,
     user_valid_access,
+    user_valid_confirm,
+    user_password_reset,
+    user_update_username,
     user_update_sensitive,
     user_password_reset_request,
-    user_password_reset,
 )
 
 
@@ -35,7 +36,7 @@ templates = get_templates()
 settings: Settings = get_settings()
 
 
-@router_user.post('/', response_model=UserBase)
+@router_user.post('/')
 async def register(
         background_tasks: BackgroundTasks,
         user=Depends(user_not_exist),
@@ -59,8 +60,6 @@ async def register(
 
     # Send confirmation token
     # background_tasks.add_task(send, smtp, user.username, confirm_token)
-
-    return user
 
 
 @router_user.get('/confirm/{token}/', response_model=AuthTokenOut)
@@ -115,7 +114,7 @@ async def update_password(
 @router_user.put('/username/')
 async def update_username(
         username_new: EmailStr = Body(...),
-        token=Depends(user_update_sensitive),
+        token=Depends(user_update_username),
         db=Depends(get_db_session),
 ):
     await CRUDUser.update_by_id(
@@ -137,7 +136,6 @@ async def update_username(
 
     # Send confirmation token
     # background_tasks.add_task(send, smtp, user.username, confirm_token)
-    pass
 
 
 @router_user.post('/password_reset_request/')
@@ -159,7 +157,7 @@ async def password_reset_request(
 
 @router_user.post('/password_reset/')
 async def password_reset(
-        password_new: str,
+        password_new: str = Body(...),
         token=Depends(user_password_reset),
         db=Depends(get_db_session),
 ):
@@ -167,4 +165,3 @@ async def password_reset(
     password_hash = HashContext.password.hash(password_new)
     await CRUDUser.update_by_id(db, user_id, password_hash=password_hash)
 
-    return Response()

@@ -1,8 +1,10 @@
+import traceback
+
 from typing import Type
 from datetime import datetime
 
 from jose import JWTError, jwt
-from fastapi import Request, Header, Depends, Path
+from fastapi import Request, Body, Header, Depends, Path
 from fastapi.security import OAuth2PasswordBearer
 
 from .db import get_db_session
@@ -10,19 +12,23 @@ from .settings import get_settings, Settings
 from ..crud import CRUDSession
 from ..utils.security import JWTRefresh
 from ..utils.session import SessionUtil
-from ..exceptions import InvalidCredentialsAuth, RefreshTokenExpired
+from ..exceptions import (
+    InvalidCredentials,
+    RefreshTokenExpired,
+    InvalidCredentialsAuth,
+)
 from ..schemas import (
     TokenPayloadType,
     TokenCheckedType,
     AccessTokenPayload,
+    ClientTokenChecked,
+    ClientTokenPayload,
     AccessTokenChecked,
     ConfirmTokenPayload,
     ConfirmTokenChecked,
-    ClientTokenPayload,
-    ClientTokenChecked,
-    RefreshAccessTokenChecked,
     PasswordResetPayload,
     PasswordResetChecked,
+    RefreshAccessTokenChecked,
 )
 
 
@@ -37,6 +43,7 @@ oauth2_scheme_client = OAuth2PasswordBearer(
 
 class JWTChecker:
     key: str
+    iss: str
     algorithms: list[str] = [settings.token.algorithm]
     options: dict = {}
     options_base: dict = {
@@ -55,12 +62,13 @@ class JWTChecker:
             # Validate token
             payload = jwt.decode(
                 token=token,
+                issuer=self.iss,
                 key=self.key,
                 algorithms=self.algorithms,
                 options={**self.options_base, **self.options}
             )
         except JWTError:
-            raise InvalidCredentialsAuth
+            raise InvalidCredentials
 
         return self.token_type(
             token=token,
@@ -70,6 +78,7 @@ class JWTChecker:
 
 class JWTAuthChecker(JWTChecker):
     key = settings.secret.jwt_key
+    iss = settings.token.access_iss
     payload_type = AccessTokenPayload
     token_type = AccessTokenChecked
 
@@ -89,6 +98,7 @@ jwt_auth_checked_unexpired = JWTAuthChecker(
 
 class JWTConfirmChecker(JWTChecker):
     key = settings.secret.confirm_key
+    iss = settings.token.confirm_iss
     payload_type = ConfirmTokenPayload
     token_type = ConfirmTokenChecked
 
@@ -103,8 +113,15 @@ jwt_confirm_checked = JWTConfirmChecker()
 
 
 class JWTPasswordResetChecker(JWTConfirmChecker):
+    iss = settings.token.password_reset_iss
     payload_type = PasswordResetPayload
     token_type = PasswordResetChecked
+
+    def __call__(
+            self,
+            token: str = Body(...),
+    ) -> ConfirmTokenChecked:
+        return super(JWTConfirmChecker, self).__call__(token)
 
 
 jwt_password_reset_checked = JWTPasswordResetChecker()
@@ -112,6 +129,7 @@ jwt_password_reset_checked = JWTPasswordResetChecker()
 
 class JWTClientChecked(JWTChecker):
     key = settings.secret.client_key
+    iss = settings.token.client_iss
     payload_type = ClientTokenPayload
     token_Type = ClientTokenChecked
 
