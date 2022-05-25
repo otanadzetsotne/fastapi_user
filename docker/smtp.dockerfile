@@ -1,0 +1,1 @@
+FROM reachfive/fake-smtp-server
