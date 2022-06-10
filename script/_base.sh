@@ -1,2 +1,2 @@
 source _dirs.sh
-source "${BASE_DIR}/.env"
+source "${CONFIG_DIR}/.env"

@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .base import CRUD
-from ..database.models import Client as ClientModel
-from ..schemas import ClientMeta, ClientData, Client
+from database.models import Client as ClientModel
+from schemas import ClientMeta, ClientData, Client
 
 
 class CRUDClient(CRUD):

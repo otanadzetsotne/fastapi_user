@@ -61,11 +61,11 @@ class Settings(BaseSettings):
     smtp: SMTP
     db: DataBase
     secret: Secret
-    sentry: Sentry
+    # sentry: Sentry
     token: Token = Token()
     environment: Environment = Environment.prod
 
     class Config:
-        env_file = '.env'
+        env_file = '../cfg/.env'
         env_file_encoding = 'utf-8'
         env_nested_delimiter = '__'

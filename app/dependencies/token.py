@@ -9,15 +9,15 @@ from fastapi.security import OAuth2PasswordBearer
 
 from .db import get_db_session
 from .settings import get_settings, Settings
-from ..crud import CRUDSession
-from ..utils.security import JWTRefresh
-from ..utils.session import SessionUtil
-from ..exceptions import (
+from crud import CRUDSession
+from utils.security import JWTRefresh
+from utils.session import SessionUtil
+from exceptions import (
     InvalidCredentials,
     RefreshTokenExpired,
     InvalidCredentialsAuth,
 )
-from ..schemas import (
+from schemas import (
     TokenPayloadType,
     TokenCheckedType,
     AccessTokenPayload,

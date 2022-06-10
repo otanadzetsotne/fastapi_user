@@ -3,8 +3,8 @@ from datetime import datetime
 
 from fastapi import Request
 
-from ..settings import Settings
-from ..schemas import SessionMeta, SessionData
+from settings import Settings
+from schemas import SessionMeta, SessionData
 
 
 class SessionUtil:

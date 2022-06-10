@@ -6,7 +6,7 @@ from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy import select, delete, update, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database.base import Base
+from database.base import Base
 
 
 TableType = TypeVar('TableType', bound=Base)

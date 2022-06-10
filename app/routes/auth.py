@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Request, Depends
 
-from ..crud import CRUDUser, CRUDSession
-from ..schemas import AuthTokenOut, SessionAgent
+from crud import CRUDUser, CRUDSession
+from schemas import AuthTokenOut, SessionAgent
 
-from ..utils.security import JWTAuthPair
-from ..utils.session import SessionUtil
-from ..utils.jwt_payload import PayloadCreator
+from utils.security import JWTAuthPair
+from utils.session import SessionUtil
+from utils.jwt_payload import PayloadCreator
 
-from ..dependencies.settings import Settings, get_settings
-from ..dependencies.templates import get_templates
-from ..dependencies.db import get_db_session
-from ..dependencies.user import (
+from dependencies.settings import Settings, get_settings
+from dependencies.templates import get_templates
+from dependencies.db import get_db_session
+from dependencies.user import (
     user_valid_access,
     user_valid_refresh,
     user_login_valid,

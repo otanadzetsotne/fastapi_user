@@ -3,16 +3,16 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
 from .db import get_db_session
-from ..crud import CRUDUser
-from ..utils.security import HashContext
-from ..schemas import (
+from crud import CRUDUser
+from utils.security import HashContext
+from schemas import (
     User,
     UserIn,
     AccessTokenChecked,
     RefreshAccessTokenChecked,
     ConfirmTokenChecked,
 )
-from ..exceptions import (
+from exceptions import (
     UserAlreadyExist,
     InactiveUser,
     InvalidCredentials,

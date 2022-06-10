@@ -9,18 +9,18 @@ from fastapi import (
 )
 
 from .auth import login
-from ..crud import CRUDUser
-from ..schemas import UserBase, UserData, UserUpdatable, AuthTokenOut
+from crud import CRUDUser
+from schemas import UserBase, UserData, UserUpdatable, AuthTokenOut
 
-from ..utils.mail import send
-from ..utils.security import HashContext, JWT
-from ..utils.jwt_payload import PayloadCreator
+from utils.mail import send
+from utils.security import HashContext, JWT
+from utils.jwt_payload import PayloadCreator
 
-from ..dependencies.smtp import get_smtp
-from ..dependencies.db import get_db_session
-from ..dependencies.templates import get_templates
-from ..dependencies.settings import Settings, get_settings
-from ..dependencies.user import (
+from dependencies.smtp import get_smtp
+from dependencies.db import get_db_session
+from dependencies.templates import get_templates
+from dependencies.settings import Settings, get_settings
+from dependencies.user import (
     user_not_exist,
     user_valid_access,
     user_valid_confirm,

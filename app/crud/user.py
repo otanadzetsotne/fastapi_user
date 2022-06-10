@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .base import CRUD
-from ..database.models import User as UserModel
-from ..schemas import UserData, User
+from database.models import User as UserModel
+from schemas import UserData, User
 
 
 class CRUDUser(CRUD):

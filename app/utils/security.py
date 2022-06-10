@@ -5,7 +5,7 @@ from jose import jwt
 from passlib.context import CryptContext
 from passlib.pwd import genword
 
-from ..schemas import ClientTokenPayload, TokenPayloadType, AccessTokenPayload
+from schemas import ClientTokenPayload, TokenPayloadType, AccessTokenPayload
 
 
 class HashContext:

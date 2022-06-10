@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .base import CRUD
-from ..database.models import Session as SessionModel
-from ..schemas import SessionData, SessionAgent, Session, SessionMeta
+from database.models import Session as SessionModel
+from schemas import SessionData, SessionAgent, Session, SessionMeta
 
 
 class CRUDSession(CRUD):

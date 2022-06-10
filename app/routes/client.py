@@ -2,13 +2,13 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends
 
-from ..crud import CRUDClient
-from ..dependencies.settings import Settings, get_settings
-from ..dependencies.user import user_valid_access
-from ..dependencies.db import get_db_session, AsyncSession
-from ..dependencies.client import client_not_expired
-from ..utils.security import JWTClient
-from ..schemas import (
+from crud import CRUDClient
+from dependencies.settings import Settings, get_settings
+from dependencies.user import user_valid_access
+from dependencies.db import get_db_session, AsyncSession
+from dependencies.client import client_not_expired
+from utils.security import JWTClient
+from schemas import (
     ClientData,
     ClientSecret,
     ClientTokenPayload,

@@ -1,9 +1,9 @@
 import sentry_sdk
 from fastapi import FastAPI
-from .routes.user import router_user
-from .routes.auth import router_auth
-from .routes.client import router_client
-from .dependencies.settings import get_settings, Settings, Environment
+from routes.user import router_user
+from routes.auth import router_auth
+from routes.client import router_client
+from dependencies.settings import get_settings, Settings, Environment
 
 
 app_fastapi = FastAPI()

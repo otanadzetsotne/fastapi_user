@@ -3,7 +3,7 @@ from typing import TypeVar, Union
 from pydantic import BaseModel, Field, EmailStr
 
 from .session import Session
-from ..dependencies.settings import get_settings, Settings
+from dependencies.settings import get_settings, Settings
 
 
 settings: Settings = get_settings()

@@ -1,6 +1,6 @@
 from functools import cache
 
-from ..settings import Settings, Environment
+from settings import Settings, Environment
 
 
 @cache
