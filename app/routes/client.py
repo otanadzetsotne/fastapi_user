@@ -7,6 +7,7 @@ from dependencies.settings import Settings, get_settings
 from dependencies.user import user_valid_access
 from dependencies.db import get_db_session, AsyncSession
 from dependencies.client import client_not_expired
+from dependencies.token import jwt_client_checked
 from utils.security import JWTClient
 from schemas import (
     ClientData,
@@ -82,6 +83,8 @@ async def token_secret(
 
 
 @router_client.post('/test/')
-async def test():
+async def test(
+        token=Depends(jwt_client_checked),
+):
     # TODO: check token and check user validity
-    pass
+    return token

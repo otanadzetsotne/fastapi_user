@@ -1,21 +1,22 @@
 # Use root/example as user/password credentials
-version: '3.1'
+version: '3.9'
 
 services:
   db:
     container_name: imsim.io.mariadb
     image: mariadb
-    command: --default-authentication-plugin=mysql_native_password
     restart: always
     environment:
-      MARIADB_RANDOM_ROOT_PASSWORD: true
-      MARIADB_USER: $DATABASE__USER
-      MARIADB_PASSWORD: $DATABASE__PASSWORD
-      MARIADB_DATABASE: $DATABASE__NAME
+      MYSQL_RANDOM_ROOT_PASSWORD: true
+      MARIADB_USER: $DB__USER
+      MARIADB_PASSWORD: $DB__PASSWORD
+      MARIADB_DATABASE: $DB__NAME
     ports:
-      - "3306:3306"
+      - "${DB__PORT}:${DB__PORT}"
     volumes:
-      - $VOLUMES/mariadb_data:/var/lib/mysql
+      - $VOLUMES_DIR/mariadb_data:/var/lib/mysql
+    networks:
+      - imsim.io
 
   adminer:
     container_name: imsim.io.adminer
@@ -23,3 +24,9 @@ services:
     restart: always
     ports:
       - "8080:8080"
+    networks:
+      - imsim.io
+
+networks:
+  imsim.io:
+    external: true

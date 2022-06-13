@@ -1,4 +1,6 @@
+import os
 from enum import Enum
+from typing import Optional
 from datetime import timedelta
 
 from pydantic import BaseModel, BaseSettings
@@ -50,6 +52,18 @@ class DataBase(BaseModel):
     password: str
     subd: str
     engine: str
+    url: Optional[str] = None
+
+    def __init__(self, **kwargs):
+        super(DataBase, self).__init__(**kwargs)
+        name = self.name
+        host = self.host
+        port = self.port
+        user = self.user
+        password = self.password
+        subd = self.subd
+        engine = self.engine
+        self.url = f'{subd}+{engine}://{user}:{password}@{host}:{port}/{name}'
 
 
 class Sentry(BaseModel):
@@ -66,6 +80,6 @@ class Settings(BaseSettings):
     environment: Environment = Environment.prod
 
     class Config:
-        env_file = '../cfg/.env'
+        env_file = f'../cfg/{os.getenv("ENV_FILE")}'
         env_file_encoding = 'utf-8'
         env_nested_delimiter = '__'

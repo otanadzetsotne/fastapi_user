@@ -18,8 +18,12 @@ RUN pip3 install --no-cache-dir pydantic[dotenv]
 RUN pip3 install --no-cache-dir email-validator
 RUN pip3 install --no-cache-dir jinja2
 RUN pip3 install --no-cache-dir python-multipart
+RUN pip3 install --no-cache-dir sqlalchemy-utils
 
 COPY app/ /app/
 COPY cfg/ /cfg/
+
+ARG ENV_FILE=$ENV_FILE
+ENV ENV_FILE=$ENV_FILE
 
 CMD ["uvicorn", "main:app_fastapi", "--host", "0.0.0.0", "--port", "80", "--reload"]

@@ -140,6 +140,9 @@ class JWTClientChecked(JWTChecker):
         return super(JWTClientChecked, self).__call__(token)
 
 
+jwt_client_checked = JWTClientChecked()
+
+
 async def jwt_refresh_checked(
         request: Request,
         access_token=Depends(jwt_auth_checked_unexpired),
